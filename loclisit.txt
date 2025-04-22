@@ -1,0 +1,35 @@
+Maharashtra 36 districts :
+
+
+   Mumbai City
+   Mumbai Suburban
+   Thane
+   Palghar
+   Raigad
+   Ratnagiri
+   Sindhudurg
+   Pune
+   Satara
+   Sangli
+   Kolhapur
+   Solapur
+   Nashik
+   Dhule
+   Nandurbar
+   Jalgaon
+   Ahmednagar
+   Aurangabad (Chhatrapati Sambhajinagar)
+   Jalna
+   Beed
+   Osmanabad (Dharashiv)
+   Amravati
+   Akola
+   Washim
+   Buldhana
+   Yavatmal
+   Nagpur
+   Wardha
+   Bhandara
+   Gondia
+   Chandrapur
+   Gadchiroli

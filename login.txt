@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bus Pass System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(110deg, #1a4b8c 0%, #2666b8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .auth-header p {
+            color: #7f8c8d;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            padding: 0.75rem;
+            border-radius: 8px;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .auth-toggle a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .success-message {
+            color: #2ecc71;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .form-icon {
+            position: relative;
+        }
+        .form-icon i {
+            position: absolute;
+            top: 50%;
+            left: 1rem;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+        .form-icon input {
+            padding-left: 3rem;
+        }
+        .form-icon input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .password-requirements {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+        }
+        .password-requirements ul {
+            padding-left: 1.5rem;
+            margin-bottom: 0;
+        }
+        .password-requirements li {
+            margin-bottom: 0.25rem;
+        }
+        .password-requirements li.valid {
+            color: #2ecc71;
+        }
+        .password-requirements li.valid::before {
+            content: "✓";
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1><i class="fas fa-bus me-2"></i>Bus Pass System</h1>
+            <p>Welcome back! Please login to your account</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="success-message">
+            <i class="fas fa-check-circle me-2"></i>{{ success }}
+        </div>
+        {% endif %}
+
+        <div id="loginForm">
+            <form action="/login" method="POST">
+                <div class="form-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="form-control" name="username" placeholder="Username or Email" required>
+                </div>
+                <div class="form-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+            </form>
+            <div class="auth-toggle">
+                <p class="mb-0">Don't have an account? <a href="#" id="showSignup">Sign up</a></p>
+            </div>
+        </div>
+
+        <div id="signupForm" style="display: none;">
+            <form action="/register" method="POST" id="signupFormElement">
+                <div class="form-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="form-control" name="full_name" placeholder="Full Name" required>
+                </div>
+                <div class="form-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" class="form-control" name="email" placeholder="Email Address" required>
+                </div>
+                <div class="form-icon">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" class="form-control" name="mobile" placeholder="Mobile Number" required>
+                </div>
+                <div class="form-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                </div>
+                <div class="password-requirements">
+                    <ul>
+                        <li id="length">At least 8 characters long</li>
+                        <li id="uppercase">Contains uppercase letter</li>
+                        <li id="lowercase">Contains lowercase letter</li>
+                        <li id="number">Contains number</li>
+                        <li id="special">Contains special character</li>
+                    </ul>
+                </div>
+                <div class="form-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Sign Up
+                </button>
+            </form>
+            <div class="auth-toggle">
+                <p class="mb-0">Already have an account? <a href="#" id="showLogin">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle between login and signup forms
+        document.getElementById('showSignup').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+        });
+
+        document.getElementById('showLogin').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+        });
+
+        // Password validation
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const requirements = {
+            length: /.{8,}/,
+            uppercase: /[A-Z]/,
+            lowercase: /[a-z]/,
+            number: /[0-9]/,
+            special: /[!@#$%^&*(),.?":{}|<>]/
+        };
+
+        password.addEventListener('input', function() {
+            Object.keys(requirements).forEach(key => {
+                const requirement = document.getElementById(key);
+                if (requirements[key].test(password.value)) {
+                    requirement.classList.add('valid');
+                } else {
+                    requirement.classList.remove('valid');
+                }
+            });
+        });
+
+        // Form submission validation
+        document.getElementById('signupFormElement').addEventListener('submit', function(e) {
+            const password = this.querySelector('input[name="password"]').value;
+            const confirmPassword = this.querySelector('input[name="confirm_password"]').value;
+            
+            // Check if all password requirements are met
+            const allRequirementsMet = Object.keys(requirements).every(key => 
+                requirements[key].test(password)
+            );
+            
+            if (!allRequirementsMet) {
+                e.preventDefault();
+                alert('Please meet all password requirements!');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    </script>
+</body>
+</html> 

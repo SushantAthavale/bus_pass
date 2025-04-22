@@ -1,0 +1,136 @@
+import sqlite3
+import qrcode
+import os
+import datetime
+import cv2
+import random
+import hashlib
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+
+def get_db_connection():
+    conn = sqlite3.connect('bus_pass.db')
+    conn.row_factory = sqlite3.Row  # Allows access to columns by name
+    return conn
+
+def hash_password(password):
+    """Hashes the password for secure storage."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def generate_pass_number():
+    """Generates a unique pass number."""
+    return f"BP-{random.randint(100000, 999999)}"
+
+def capture_user_image():
+    """Captures a user image using the webcam."""
+    cap = cv2.VideoCapture(0)  # Access the default webcam
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
+
+    while True:
+        ret, frame = cap.read()
+        if ret:
+            cv2.imshow('Press "c" to capture', frame)
+            if cv2.waitKey(1) & 0xFF == ord('c'):
+                image_path = f"static/user_images/user_image_{generate_pass_number()}.jpg"  # Unique filename
+                cv2.imwrite(image_path, frame)
+                cap.release()
+                cv2.destroyAllWindows()
+                return image_path
+        else:
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    return None
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        age = int(request.form['age'])
+        days = int(request.form['days'])
+
+        # Generate a unique pass number
+        pass_number = generate_pass_number()
+
+        # Calculate pass valid until date
+        valid_until = datetime.date.today() + datetime.timedelta(days=days)
+
+        # Create QR code data
+        qr_data = f"Pass Number: {pass_number}"
+
+        # Create QR code image
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        qr_code_path = f"static/qr_codes/qr_code_{pass_number}.png"
+        img.save(qr_code_path)
+
+        # Capture user image
+        image_path = capture_user_image()
+
+        # Store pass data in database
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO bus_passes (name, email, password, age, pass_number, qr_code, valid_until, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (name, email, hash_password(password), age, pass_number, qr_code_path, valid_until, image_path)
+                )
+                conn.commit()
+        except sqlite3.IntegrityError:
+            return "Error: Pass number must be unique. Please try again.", 400
+        except Exception as e:
+            return f"An error occurred: {e}", 500
+
+        return redirect(url_for('display_pass', pass_number=pass_number))
+
+    return render_template('register.html')
+
+
+@app.route('/display', methods=['GET'])
+def display_pass():
+    pass_number = request.args.get('pass_number')
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM bus_passes WHERE pass_number = ?", (pass_number,))
+        result = cursor.fetchone()
+
+    if result:
+        return render_template('display.html', 
+                               name=result['name'], 
+                               email=result['email'], 
+                               age=result['age'], 
+                               pass_number=result['pass_number'], 
+                               qr_code_path=result['qr_code'], 
+                               valid_until=result['valid_until'], 
+                               image_path=result['image_path'])
+    else:
+        return "Pass not found", 404
+    
+# @app.route('/display/<pass_number>')
+# def display_pass(pass_number):
+#     with get_db_connection() as conn:
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT * FROM bus_passes WHERE pass_number = ?", (pass_number,))
+#         result = cursor.fetchone()
+
+#     if result:
+#         return render_template('display.html', 
+#                                name=result['name'], 
+#                                email=result['email'], 
+#                                age=result['age'], 
+#                                pass_number=result['pass_number'], 
+#                                qr_code_path=result['qr_code'], 
+#                                valid_until=result['valid_until'], 
+#                                image_path=result['image_path'])
+#     else:
+#         return "Pass not found", 404

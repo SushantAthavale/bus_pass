@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan QR Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .scanner-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 2rem auto;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        #reader__scan_region {
+            background: white;
+            position: relative;
+            border-radius: 10px;
+        }
+        #reader__scan_region img {
+            display: none;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .camera-error {
+            color: #dc3545;
+            margin-top: 1rem;
+            display: none;
+        }
+        /* Scanning Animation */
+        .scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .scanning-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+            animation: scanning 2s linear infinite;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+        .scanning-corners {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #3498db;
+            animation: cornerPulse 2s infinite;
+        }
+        .corner-top-left {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+            animation-delay: 0s;
+        }
+        .corner-top-right {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+            animation-delay: 0.5s;
+        }
+        .corner-bottom-left {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+            animation-delay: 1s;
+        }
+        .corner-bottom-right {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+            animation-delay: 1.5s;
+        }
+        @keyframes scanning {
+            0% {
+                top: 0;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+        @keyframes cornerPulse {
+            0% {
+                border-color: #3498db;
+                box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+            }
+            50% {
+                border-color: #2980b9;
+                box-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+            }
+            100% {
+                border-color: #3498db;
+                box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+            }
+        }
+        /* Success Animation */
+        .success-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+            padding: 2rem;
+            border-radius: 50%;
+            display: none;
+            z-index: 1000;
+            animation: successPulse 1s ease-in-out;
+            box-shadow: 0 0 30px rgba(40, 167, 69, 0.5);
+        }
+        @keyframes successPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        /* Loading Animation */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+        .loading-spinner i {
+            font-size: 3rem;
+            color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Scanner Window Animation */
+        .scanner-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            border-radius: 10px;
+            animation: windowPulse 2s infinite;
+        }
+        @keyframes windowPulse {
+            0% {
+                border-color: rgba(52, 152, 219, 0.3);
+                box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+            }
+            50% {
+                border-color: rgba(52, 152, 219, 0.6);
+                box-shadow: 0 0 20px rgba(52, 152, 219, 0.4);
+            }
+            100% {
+                border-color: rgba(52, 152, 219, 0.3);
+                box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+            }
+        }
+        /* Scanning Guide */
+        .scanning-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            pointer-events: none;
+        }
+        .guide-line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.3), transparent);
+            animation: guideScan 2s linear infinite;
+        }
+        .guide-line-horizontal {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .guide-line-vertical {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        @keyframes guideScan {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <h1><i class="fas fa-qrcode"></i> Scan QR Code</h1>
+        <p class="lead">Please hold your bus pass QR code in front of the camera</p>
+        
+        <div id="reader">
+            <div class="scanning-overlay">
+                <div class="scanning-line"></div>
+                <div class="scanning-corners">
+                    <div class="corner corner-top-left"></div>
+                    <div class="corner corner-top-right"></div>
+                    <div class="corner corner-bottom-left"></div>
+                    <div class="corner corner-bottom-right"></div>
+                </div>
+                <div class="scanner-window"></div>
+                <div class="scanning-guide">
+                    <div class="guide-line guide-line-horizontal"></div>
+                    <div class="guide-line guide-line-vertical"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="camera-error" id="camera-error">
+            <i class="fas fa-exclamation-circle"></i> Camera access denied. Please allow camera access and refresh the page.
+        </div>
+
+        <div class="mt-4">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <div class="success-animation" id="success-animation">
+        <i class="fas fa-check-circle fa-3x"></i>
+    </div>
+
+    <div class="loading-spinner" id="loading-spinner">
+        <i class="fas fa-spinner"></i>
+    </div>
+
+    <script>
+        function onScanSuccess(decodedText, decodedResult) {
+            // Show success animation
+            const successAnimation = document.getElementById('success-animation');
+            successAnimation.style.display = 'block';
+
+            // Stop scanning after successful scan
+            html5QrCode.stop().then(() => {
+                // Extract pass number from QR code
+                const passNumber = decodedText.split(": ")[1];
+                if (passNumber) {
+                    // Show loading spinner
+                    document.getElementById('loading-spinner').style.display = 'block';
+                    
+                    // Redirect to display page with pass number after a short delay
+                    setTimeout(() => {
+                        window.location.href = `/display?pass_number=${passNumber}`;
+                    }, 1500);
+                }
+            });
+        }
+
+        function onScanError(errorMessage, error) {
+            // Handle scan error
+            console.warn(error);
+        }
+
+        function onScanFailure(error) {
+            // Handle scan failure
+            console.error(error);
+        }
+
+        // Initialize QR Code Scanner
+        const html5QrCode = new Html5Qrcode("reader");
+        const config = { 
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+
+        // Start scanning
+        html5QrCode.start(
+            { facingMode: "environment" }, // Use back camera by default
+            config,
+            onScanSuccess,
+            onScanError
+        ).catch(err => {
+            // Handle camera access error
+            console.error(err);
+            document.getElementById('camera-error').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

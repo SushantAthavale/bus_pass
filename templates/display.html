@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Pass Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .pass-details {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .qr-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .qr-code {
+            max-width: 200px;
+            margin: 1rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .qr-code img {
+            width: 100%;
+            height: auto;
+        }
+        .user-photo {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .user-photo img {
+            max-width: 200px;
+            border-radius: 50%;
+            border: 4px solid #3498db;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .validity-status {
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+        .validity-status.valid {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .validity-status.expired {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .detail-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background: white;
+        }
+        .detail-label {
+            min-width: 120px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .detail-value {
+            flex-grow: 1;
+            color: #34495e;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        @media print {
+            @page {
+                size: 100mm 63mm landscape;
+                margin: 0;
+            }
+            html, body {
+                width: 100mm;
+                height: 63mm;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background: none;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .main-container {
+                width: 100mm;
+                height: 63mm;
+                margin: 0;
+                padding: 5mm;
+                position: relative;
+                background: linear-gradient(110deg, 
+                    #1a4b8c 0%, 
+                    #2666b8 30%, 
+                    #1e56a1 60%, 
+                    #163d73 100%
+                );
+                border-radius: 3.5mm;
+                box-shadow: none;
+                display: flex;
+                flex-direction: column;
+                page-break-inside: avoid;
+            }
+            .header {
+                text-align: center;
+                margin: 0 0 3mm 0;
+                padding: 0;
+                border: none;
+            }
+            .header h1 {
+                font-size: 4.5mm;
+                color: white !important;
+                margin: 0;
+                font-weight: bold;
+                letter-spacing: 0.3mm;
+            }
+            .header p, .header::before, .header::after {
+                display: none;
+            }
+            .content-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-top: 3mm;
+            }
+            .user-photo {
+                width: 20mm;
+                margin: 0;
+                padding: 0;
+            }
+            .user-photo img {
+                width: 20mm;
+                height: 20mm;
+                border: 0.4mm solid rgba(255, 255, 255, 0.5);
+                border-radius: 2.2mm;
+            }
+            .user-photo h4 {
+                display: none;
+            }
+            .pass-details {
+                flex: 1;
+                margin: 0;
+                padding: 0;
+                background: none;
+            }
+            .detail-row {
+                margin-bottom: 1mm;
+                padding: 0;
+                background: none;
+            }
+            .detail-label, .detail-value {
+                color: white !important;
+                font-size: 2.2mm;
+                line-height: 4.5mm;
+            }
+            .detail-label {
+                min-width: 18mm;
+            }
+            /* EMV chip */
+            .main-container::after {
+                content: '';
+                position: absolute;
+                bottom: 22mm;
+                left: 9mm;
+                width: 11mm;
+                height: 6.5mm;
+                background: linear-gradient(120deg, #FFD700 0%, #FFA500 100%);
+                border-radius: 2.5mm;
+                box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+                z-index: 2;
+            }
+            .qr-section {
+                position: absolute;
+                bottom: 20mm;
+                right: 5mm;
+                width: 18mm;
+                margin: 0;
+                padding: 0;
+            }
+            .qr-code {
+                width: 16.3mm;
+                height: 16.3mm;
+                padding: 1mm;
+                background: white;
+                border-radius: 1mm;
+            }
+            .qr-code img {
+                width: 100%;
+                height: 100%;
+            }
+            .qr-section h3, .qr-section p {
+                display: none;
+            }
+            .validity-status {
+                position: absolute;
+                bottom: 7mm;
+                left: 5mm;
+                right: 5mm;
+                padding: 1.5mm;
+                margin: 0;
+                background: rgba(255, 255, 255, 0.1) !important;
+                border-radius: 1mm;
+                text-align: center;
+            }
+            .validity-status strong {
+                font-size: 2.2mm;
+                margin-right: 1.5mm;
+            }
+            .validity-status p {
+                font-size: 2mm;
+                margin: 0;
+            }
+            .action-buttons {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <div class="header">
+            <h1><i class="fas fa-id-card"></i> Bus Pass Details</h1>
+            <p class="lead">Your digital bus pass information</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="user-photo">
+                    {% if image_path %}
+                    <img src="{{ image_path }}" alt="User Photo" class="img-fluid">
+                    {% else %}
+                    <div class="text-center">
+                        <i class="fas fa-user-circle" style="font-size: 100px; color: #3498db;"></i>
+                        <p class="mt-2">No photo available</p>
+                    </div>
+                    {% endif %}
+                    <h4 class="mt-3">{{ name }}</h4>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="pass-details">
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-hashtag"></i> Pass Number:</span>
+                        <span class="detail-value">{{ pass_number }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-envelope"></i> Email:</span>
+                        <span class="detail-value">{{ email }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-birthday-cake"></i> Age:</span>
+                        <span class="detail-value">{{ age }} years</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label"><i class="fas fa-calendar-alt"></i> Valid Until:</span>
+                        <span class="detail-value">{{ valid_until.strftime('%d %B, %Y') }}</span>
+                    </div>
+                </div>
+
+                {% if valid_until < today %}
+                <div class="validity-status expired">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Pass Status: EXPIRED</strong>
+                    <p class="mb-0">Your pass has expired. Please renew to continue using the services.</p>
+                    <a href="{{ url_for('renew_pass', pass_number=pass_number) }}" class="btn btn-danger mt-2">
+                        <i class="fas fa-sync"></i> Renew Pass
+                    </a>
+                </div>
+                {% else %}
+                <div class="validity-status valid">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Pass Status: ACTIVE</strong>
+                    <p class="mb-0">Valid for {{ (valid_until - today).days }} more days</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="qr-section">
+            <h3><i class="fas fa-qrcode"></i> QR Code</h3>
+            <p class="text-muted">Scan this code to verify your pass</p>
+            <div class="qr-actions mb-3">
+                <a href="{{ url_for('static', filename=qr_code.replace('static/', '')) }}" download="bus_pass_qr.png" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>Download QR Code
+                </a>
+            </div>
+            <div class="qr-code">
+                {% if qr_code %}
+                <img src="{{ url_for('static', filename=qr_code.replace('static/', '')) }}" alt="QR Code">
+                {% else %}
+                <div class="text-center">
+                    <i class="fas fa-qrcode" style="font-size: 100px; color: #3498db;"></i>
+                    <p class="mt-2">QR Code not available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Print Pass
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userDetails = {
+                name: "{{ name }}",
+                pass_number: "{{ pass_number }}",
+                email: "{{ email }}",
+                age: "{{ age }}",
+                valid_until: "{{ valid_until.strftime('%d %B, %Y') }}",
+                status: "{{ 'EXPIRED' if valid_until < today else 'ACTIVE' }}"
+            };
+            
+            const qrImg = document.querySelector('.qr-code img');
+            if (qrImg) {
+                const baseUrl = window.location.origin;
+                const verifyUrl = `${baseUrl}/verify/${userDetails.pass_number}`;
+                qrImg.setAttribute('data-verify-url', verifyUrl);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+import sqlite3
+import qrcode
+import os
+import datetime
+import cv2
+
+# Database setup
+conn = sqlite3.connect('bus_pass.db')
+cursor = conn.cursor()
+
+# Create table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS bus_passes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        password TEXT UNIQUE,
+        age INTEGER,
+        pass_number TEXT UNIQUE NOT NULL,
+        qr_code TEXT,
+        valid_until DATE,
+        image_path TEXT
+    )
+''')
+conn.commit()
+
+def register_pass(name, email, password, age, days):
+    """Registers a new bus pass and generates a QR code."""
+
+    # Generate a unique pass number
+    pass_number = generate_pass_number()
+
+    # Calculate pass valid until date
+    valid_until = datetime.date.today() + datetime.timedelta(days=days)
+
+    # Create QR code data
+    qr_data = f"Pass Number: {pass_number}"
+
+    # Create QR code image
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    qr_code_path = f"qr_code_{pass_number}.png"
+    img.save(qr_code_path)
+
+    # Capture user image
+    image_path = capture_user_image()
+
+    # Store pass data in database
+    cursor.execute(
+        "INSERT INTO bus_passes (name, email, password, age, pass_number, qr_code, valid_until, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, email, password, age, pass_number, qr_code_path, valid_until, image_path)
+    )
+    conn.commit()
+
+    print(f"Bus pass registered successfully! Your pass number is: {pass_number}")
+    print(f"QR code saved to: {qr_code_path}")
+    print(f"Your pass is valid until: {valid_until.strftime('%Y-%m-%d')}")
+
+def generate_pass_number():
+    """Generates a unique pass number."""
+    # Implement your own logic for generating unique pass numbers
+    # This is a simple example using random numbers
+    import random
+    return f"BP-{random.randint(100000, 999999)}"
+
+def capture_user_image():
+    """Captures a user image using the webcam."""
+    cap = cv2.VideoCapture(0)  # Access the default webcam
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
+
+    while(True):
+        ret, frame = cap.read()
+        if ret:
+            cv2.imshow('Press "c" to capture', frame)
+            if cv2.waitKey(1) & 0xFF == ord('c'):
+                image_path = f"user_image_{generate_pass_number()}.jpg"  # Unique filename
+                cv2.imwrite(image_path, frame)
+                cap.release()
+                cv2.destroyAllWindows()
+                print(f"User image saved to: {image_path}")
+                return image_path
+        else:
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    return None
+
+def display_pass_details(pass_number):
+    """Displays pass details and shows the QR code."""
+    cursor.execute("SELECT * FROM bus_passes WHERE pass_number = ?", (pass_number,))
+    result = cursor.fetchone()
+
+    if result:
+        name, email, password, age, pass_number, qr_code_path, valid_until, image_path = result  # Unpacking result
+        print(f"Name: {name}")
+        print(f"Email: {email}")
+        print(f"Password: {password}")
+        print(f"Age: {age}")
+        print(f"Pass Number: {pass_number}")
+        print(f"QR Code: {qr_code_path}")
+        print(f"Valid Until: {valid_until}")
+
+    #     # Display QR code
+    #     if os.path.exists(qr_code_path):
+    #         print("QR Code:")
+    #         os.system(f"start {qr_code_path}")  # Use appropriate command for your OS
+    #     else:
+    #         print("QR Code not found.")
+
+    #     # Display user image
+    #     if os.path.exists(image_path):
+    #         print("User Image:")
+    #         os.system(f"start {image_path}")  # Use appropriate command for your OS
+    #     else:
+    #         print("User Image not found.")
+    # else:
+    #     print(f"Bus pass with number {pass_number} does not exist.")
+
+# Get user details from the user
+name = input("Enter your name: ")
+email = input("Enter your email: ")
+password = input("Set your password: ")
+age = int(input("Enter your age: "))
+days = int(input("Enter the number of days for the bus pass: "))
+
+# Register the pass
+register_pass(name, email, password, age, days)
+
+# Get pass number for display
+pass_number = input("Enter the pass number to display details: ")
+
+# Display details and QR code
+display_pass_details(pass_number)
+
+# Close database connection
+conn.close()

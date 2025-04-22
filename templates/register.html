@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Bus Pass </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .camera-section {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .camera-section:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .camera-section i {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 1rem;
+        }
+        #cameraModal .modal-content {
+            background: #f8f9fa;
+        }
+        #cameraModal .modal-header {
+            border-bottom: none;
+        }
+        #cameraModal .modal-footer {
+            border-top: none;
+        }
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: block;
+        }
+        #capturedImage {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: none;
+        }
+        .camera-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .camera-controls button {
+            padding: 0.5rem 2rem;
+        }
+        .preview-container {
+            position: relative;
+            margin: 1rem auto;
+            max-width: 640px;
+        }
+        .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <div class="header">
+            <h1><i class="fas fa-user-plus"></i> Register for a Bus Pass</h1>
+            <p class="lead">Please fill in your details to create a new bus pass</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="age" class="form-label">Age</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-birthday-cake"></i></span>
+                        <input type="number" class="form-control" id="age" name="age" min="1" max="120" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="days" class="form-label">Pass Validity (Days)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="number" class="form-control" id="days" name="days" min="1" max="365" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="mobile" class="form-label">Mobile Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <input type="text" class="form-control" id="mobile" name="mobile" pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="district" class="form-label">Select District</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-city"></i></span>
+                        <select class="form-control" id="district" name="district" required>
+                            <option value="">Select District</option>
+                            <option value="mumbai_city">Mumbai City</option>
+                            <option value="mumbai_suburban">Mumbai Suburban</option>
+                            <option value="thane">Thane</option>
+                            <option value="palghar">Palghar</option>
+                            <option value="raigad">Raigad</option>
+                            <option value="ratnagiri">Ratnagiri</option>
+                            <option value="sindhudurg">Sindhudurg</option>
+                            <option value="pune">Pune</option>
+                            <option value="satara">Satara</option>
+                            <option value="sangli">Sangli</option>
+                            <option value="kolhapur">Kolhapur</option>
+                            <option value="solapur">Solapur</option>
+                            <option value="nashik">Nashik</option>
+                            <option value="dhule">Dhule</option>
+                            <option value="nandurbar">Nandurbar</option>
+                            <option value="jalgaon">Jalgaon</option>
+                            <option value="ahmednagar">Ahmednagar</option>
+                            <option value="aurangabad">Aurangabad (Chhatrapati Sambhajinagar)</option>
+                            <option value="jalna">Jalna</option>
+                            <option value="beed">Beed</option>
+                            <option value="osmanabad">Osmanabad (Dharashiv)</option>
+                            <option value="amravati">Amravati</option>
+                            <option value="akola">Akola</option>
+                            <option value="washim">Washim</option>
+                            <option value="buldhana">Buldhana</option>
+                            <option value="yavatmal">Yavatmal</option>
+                            <option value="nagpur">Nagpur</option>
+                            <option value="wardha">Wardha</option>
+                            <option value="bhandara">Bhandara</option>
+                            <option value="gondia">Gondia</option>
+                            <option value="chandrapur">Chandrapur</option>
+                            <option value="gadchiroli">Gadchiroli</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="camera-section" data-bs-toggle="modal" data-bs-target="#cameraModal">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-camera fa-2x text-primary me-3"></i>
+                            <div>
+                                <h5 class="mb-1">Photo Capture</h5>
+                                <p class="text-muted mb-0">Click to capture your photo</p>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="photoData" name="photo_data">
+                </div>
+
+                <div class="col-12 mt-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>Complete Registration
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="modal fade" id="cameraModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-camera"></i> Capture Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="camera-container mb-3">
+                                <video id="video" autoplay playsinline></video>
+                                <canvas id="canvas" style="display: none;"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="preview-container">
+                                <img id="photoPreview" class="img-fluid rounded" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="captureBtn">
+                        <i class="fas fa-camera"></i> Capture Photo
+                    </button>
+                    <button type="button" class="btn btn-success" id="retakeBtn" style="display: none;">
+                        <i class="fas fa-redo"></i> Retake
+                    </button>
+                    <button type="button" class="btn btn-success" id="usePhotoBtn" style="display: none;">
+                        <i class="fas fa-check"></i> Use Photo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Success Modal -->
+    <div class="modal fade" id="otpSuccessModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> OTP Sent Successfully</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-paper-plane fa-3x text-success mb-3"></i>
+                    <div class="otp-message p-3 bg-light rounded">
+                        <h4 class="text-primary mb-3">Verification Reminder</h4>
+                        <p class="mb-2"><strong>OTP - </strong><span id="otpValue" class="text-danger"></span></p>
+                        <p class="mb-0"><strong>Message - </strong><span id="otpMessage" class="text-muted"></span></p>
+                    </div>
+                    <p class="mt-3 text-muted">Please check your selected device for the OTP.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div class="modal fade" id="otpVerificationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> OTP Verified</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="lead">OTP verification successful!</p>
+                    <p class="text-muted">You can now proceed with the registration.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-credit-card"></i> Complete Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="payment-summary p-3 bg-light rounded mb-4">
+                        <h5 class="mb-3">Payment Summary</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>District:</span>
+                                    <span id="paymentDistrict"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Selected Days:</span>
+                                    <span id="selectedDays">0 days</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Daily Pass Fee:</span>
+                                    <span id="dailyFee">₹0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Pass Fee:</span>
+                                    <span id="totalPassFee">₹0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Processing Fee:</span>
+                                    <span>₹50</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Daily Rate:</span>
+                                    <span id="paymentDailyRate"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total Amount:</strong>
+                            <strong id="totalAmount">₹0</strong>
+                        </div>
+                    </div>
+
+                    <div class="payment-forms">
+                        <div id="upiForm" class="payment-form">
+                            <h6 class="text-muted mb-3">UPI Payment</h6>
+                            <div class="mb-3">
+                                <label for="upiId" class="form-label">UPI ID</label>
+                                <input type="text" class="form-control" id="upiId" placeholder="Enter UPI ID" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmPayment">
+                        <i class="fas fa-check"></i> Confirm Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="successModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>Pass Generated Successfully!
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <div class="alert alert-success">
+                        <h6 class="mb-2">Your Bus Pass Details:</h6>
+                        <p class="mb-1"><strong>Pass Number:</strong> <span id="successPassNumber"></span></p>
+                        <p class="mb-1"><strong>Valid Until:</strong> <span id="successValidUntil"></span></p>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="/display?pass_number=" id="viewPassLink" class="btn btn-primary">
+                            <i class="fas fa-eye me-2"></i>View Pass
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-home me-2"></i>Back to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let stream = null;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photoPreview = document.getElementById('photoPreview');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const usePhotoBtn = document.getElementById('usePhotoBtn');
+        const photoData = document.getElementById('photoData');
+        const proceedToPayBtn = document.getElementById('proceedToPay');
+        const daysInput = document.getElementById('days');
+        const districtSelect = document.getElementById('district');
+        const paymentModal = document.getElementById('paymentModal');
+
+        // District prices
+        const districtPrices = {
+            'mumbai_city': 20,
+            'mumbai_suburban': 20,
+            'thane': 20,
+            'palghar': 20,
+            'raigad': 20,
+            'ratnagiri': 20,
+            'sindhudurg': 20,
+            'pune': 15,
+            'satara': 15,
+            'sangli': 15,
+            'kolhapur': 15,
+            'solapur': 15,
+            'nashik': 12,
+            'dhule': 12,
+            'nandurbar': 12,
+            'jalgaon': 12,
+            'ahmednagar': 12,
+            'aurangabad': 10,
+            'jalna': 10,
+            'beed': 10,
+            'osmanabad': 10,
+            'amravati': 10,
+            'akola': 10,
+            'washim': 10,
+            'buldhana': 10,
+            'yavatmal': 10,
+            'nagpur': 10,
+            'wardha': 10,
+            'bhandara': 10,
+            'gondia': 10,
+            'chandrapur': 10,
+            'gadchiroli': 10
+        };
+
+        // Function to check if both days and district are selected
+        function checkPaymentButton() {
+            const days = parseInt(daysInput.value) || 0;
+            const district = districtSelect.value;
+            proceedToPayBtn.disabled = !(days > 0 && district);
+        }
+
+        // Add event listeners for both inputs
+        daysInput.addEventListener('input', checkPaymentButton);
+        districtSelect.addEventListener('change', checkPaymentButton);
+
+        // Start camera when modal opens
+        document.getElementById('cameraModal').addEventListener('shown.bs.modal', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Error accessing camera. Please make sure you have granted camera permissions.');
+            }
+        });
+
+        // Stop camera when modal closes
+        document.getElementById('cameraModal').addEventListener('hidden.bs.modal', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        });
+
+        // Capture photo
+        captureBtn.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Show preview
+            photoPreview.src = canvas.toDataURL('image/jpeg');
+            photoPreview.style.display = 'block';
+            
+            // Show retake and use photo buttons
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            usePhotoBtn.style.display = 'inline-block';
+        });
+
+        // Retake photo
+        retakeBtn.addEventListener('click', () => {
+            photoPreview.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+            usePhotoBtn.style.display = 'none';
+        });
+
+        // Use captured photo
+        usePhotoBtn.addEventListener('click', () => {
+            photoData.value = canvas.toDataURL('image/jpeg');
+            const cameraSection = document.querySelector('.camera-section');
+            cameraSection.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                    <div>
+                        <h5 class="mb-1">Photo Captured</h5>
+                        <p class="text-muted mb-0">Photo has been successfully captured</p>
+                    </div>
+                </div>
+            `;
+            bootstrap.Modal.getInstance(document.getElementById('cameraModal')).hide();
+        });
+
+        // OTP handling
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const otpInput = document.getElementById('otp');
+        let otpTimer = null;
+        let otpExpiryTime = null;
+
+        // Send OTP
+        sendOtpBtn.addEventListener('click', async () => {
+            const otpMethod = document.getElementById('otp_method').value;
+            const email = document.getElementById('email').value;
+            const mobile = document.getElementById('mobile').value;
+
+            if ((otpMethod === 'email' && !email) || (otpMethod === 'mobile' && !mobile)) {
+                alert('Please provide a valid email or mobile number.');
+                return;
+            }
+
+            try {
+                // Disable send button and show loading state
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+                const response = await fetch(`/register?otp_method=${otpMethod}&email=${email}&mobile=${mobile}`, {
+                    method: 'GET',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const otp = data.otp;
+                    
+                    // Update the modal with the OTP
+                    document.getElementById('otpValue').textContent = otp;
+                    document.getElementById('otpMessage').textContent = `${otp} is your Bus Pass OTP. Do not share with anyone.`;
+                    
+                    // Show success modal
+                    const otpSuccessModal = new bootstrap.Modal(document.getElementById('otpSuccessModal'));
+                    otpSuccessModal.show();
+
+                    // Set OTP expiry timer (5 minutes)
+                    otpExpiryTime = new Date().getTime() + 5 * 60 * 1000;
+                    updateOtpTimer();
+
+                    // Enable OTP input
+                    otpInput.disabled = false;
+                } else {
+                    throw new Error('Failed to send OTP');
+                }
+            } catch (error) {
+                console.error('Error sending OTP:', error);
+                alert('An error occurred while sending OTP. Please try again.');
+            } finally {
+                // Reset send button state
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+            }
+        });
+
+        // Update OTP timer
+        function updateOtpTimer() {
+            if (otpTimer) {
+                clearInterval(otpTimer);
+            }
+
+            otpTimer = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = otpExpiryTime - now;
+
+                if (distance <= 0) {
+                    clearInterval(otpTimer);
+                    otpInput.disabled = true;
+                    sendOtpBtn.disabled = false;
+                    alert('OTP has expired. Please request a new one.');
+                }
+            }, 1000);
+        }
+
+        // Update payment modal details
+        paymentModal.addEventListener('show.bs.modal', function() {
+            const district = districtSelect.options[districtSelect.selectedIndex].text;
+            const days = daysInput.value;
+            const dailyPrice = districtPrices[districtSelect.value];
+            const passFee = dailyPrice * parseInt(days);
+            const total = passFee + 50;
+
+            // Update payment summary
+            document.getElementById('paymentDistrict').textContent = district;
+            document.getElementById('selectedDays').textContent = `${days} days`;
+            document.getElementById('dailyFee').textContent = `₹${dailyPrice}/day`;
+            document.getElementById('totalPassFee').textContent = `₹${passFee}`;
+            document.getElementById('paymentDailyRate').textContent = `₹${dailyPrice}/day`;
+            document.getElementById('totalAmount').textContent = `₹${total}`;
+        });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', (e) => {
+            if (!photoData.value) {
+                e.preventDefault();
+                alert('Please capture your photo before submitting.');
+            }
+            if (!districtSelect.value) {
+                e.preventDefault();
+                alert('Please select a district.');
+            }
+        });
+
+        // Complete Registration button click handler
+        document.getElementById('completeRegistration').addEventListener('click', function() {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            
+            // Validate required fields
+            if (!formData.get('name') || !formData.get('email') || 
+                !formData.get('age') || !formData.get('days') || !formData.get('mobile') || 
+                !formData.get('district') || !formData.get('photo_data') || !formData.get('otp')) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Show payment modal
+            const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            paymentModal.show();
+        });
+
+        // Confirm payment handling
+        document.getElementById('confirmPayment').addEventListener('click', function() {
+            const upiId = document.getElementById('upiId').value;
+            let isValid = true;
+
+            // Validate UPI ID
+            if (!upiId) {
+                isValid = false;
+                alert('Please enter UPI ID');
+            }
+
+            if (isValid) {
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+                formData.append('payment_method', 'UPI');
+
+                // Show loading state
+                const confirmBtn = document.getElementById('confirmPayment');
+                const originalText = confirmBtn.innerHTML;
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                fetch('/register', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Payment failed');
+                    }
+                    return response.text();
+                })
+                .then(receiptNumber => {
+                    // Close the payment modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    alert('Payment successful! Redirecting to receipt...');
+                    
+                    // Redirect to receipt page
+                    window.location.href = `/receipt/${receiptNumber}`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Payment failed. Please try again.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = originalText;
+                });
+            }
+        });
+
+        // Update the form submission success handler
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate all required fields
+            if (!validateForm()) {
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            // Send data to server
+            fetch('/register', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update success modal with pass details
+                    document.getElementById('successPassNumber').textContent = data.pass_number;
+                    document.getElementById('successValidUntil').textContent = data.valid_until;
+                    
+                    // Update view pass link
+                    const viewPassLink = document.getElementById('viewPassLink');
+                    viewPassLink.href = `/display?pass_number=${data.pass_number}`;
+                    
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Reset form
+                    this.reset();
+                    document.getElementById('capturedPhoto').style.display = 'none';
+                    document.getElementById('captureBtn').style.display = 'block';
+                } else {
+                    showAlert('error', data.error || 'Registration failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'An error occurred. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Complete Registration';
+            });
+        });
+    </script>
+</body>
+</html>

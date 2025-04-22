@@ -1,0 +1,12 @@
+D:\Bus Pass\
+│
+├── Pass.py               # Your Flask application file
+│
+├── templates\            # This folder should contain your HTML files
+│   ├── index.html
+│   ├── register.html
+│   └── display.html
+│
+└── static\               # This folder should contain your static files (CSS, images, etc.)
+    ├── qr_codes\        # Folder for QR code images
+    └── user_images\     # Folder for user images
