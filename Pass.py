@@ -9,6 +9,7 @@ import base64
 import secrets
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, jsonify
 from werkzeug.security import generate_password_hash
+from functools import wraps
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your-secret-key-here'  # Required for flash messages
@@ -51,6 +52,17 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Create users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     # Create bus_passes table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bus_passes (
@@ -62,9 +74,11 @@ def init_db():
             valid_until DATE NOT NULL,
             mobile_no TEXT NOT NULL,
             district TEXT NOT NULL,
-            photo_data TEXT,  -- Store base64 image data
+            photo_data TEXT,
             qr_code TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            user_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
     
@@ -174,7 +188,84 @@ def verify_otp(email, mobile, otp):
 def index():
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+            
+            if user and user['password'] == password:  # In production, use proper password hashing
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                flash('Login successful!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid username or password', 'error')
+        except Exception as e:
+            flash('An error occurred during login', 'error')
+        finally:
+            conn.close()
+    
+    return render_template('login.html')
+
+@app.route('/register_user', methods=['GET', 'POST'])
+def register_user():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Check if username or email already exists
+            cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (username, email))
+            if cursor.fetchone():
+                flash('Username or email already exists', 'error')
+                return redirect(url_for('register_user'))
+            
+            # Insert new user
+            cursor.execute('''
+                INSERT INTO users (username, password, email)
+                VALUES (?, ?, ?)
+            ''', (username, password, email))
+            
+            conn.commit()
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash('An error occurred during registration', 'error')
+        finally:
+            conn.close()
+    
+    return render_template('register_user.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('index'))
+
+# Add login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please login to access this page', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/register', methods=['GET', 'POST'])
+@login_required
 def register():
     if request.method == 'POST':
         conn = None
@@ -690,11 +781,13 @@ def debug_db():
         return f"Error: {str(e)}", 500
 
 @app.route('/view_pass', methods=['GET'])
+@login_required
 def view_pass():
     """Render the view pass search page."""
     return render_template('view_pass.html')
 
 @app.route('/renew', methods=['GET'])
+@login_required
 def renew():
     """Render the renew pass search page."""
     return render_template('renew.html')
