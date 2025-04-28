@@ -91,26 +91,138 @@
             margin-bottom: 1rem;
             border-radius: 8px;
         }
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --info-color: #3498db;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+        
+        /* Add notification styles */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .notification {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            min-width: 300px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .notification.info {
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .notification-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .notification.success .notification-icon {
+            color: var(--success-color);
+        }
+        
+        .notification.error .notification-icon {
+            color: var(--accent-color);
+        }
+        
+        .notification.info .notification-icon {
+            color: var(--info-color);
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-message {
+            color: #666;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            margin-left: 1rem;
+        }
+        
+        .notification-close:hover {
+            color: #666;
+        }
     </style>
 </head>
 <body>
+    <!-- Add notification container -->
+    <div class="notification-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification {{ category }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'info-circle' }} notification-icon"></i>
+                        <div class="notification-content">
+                            <div class="notification-title">
+                                {{ 'Success!' if category == 'success' else 'Error!' if category == 'error' else 'Info' }}
+                            </div>
+                            <div class="notification-message">{{ message }}</div>
+                        </div>
+                        <button class="notification-close" onclick="this.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <div class="renew-container">
         <div class="header">
             <h1><i class="fas fa-sync-alt"></i> Renew Bus Pass</h1>
             <p class="lead">Select the duration for your pass renewal</p>
         </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
         <form method="POST" action="{{ url_for('renew_pass', pass_number=pass_number) }}" id="renewForm">
             <div class="form-group">

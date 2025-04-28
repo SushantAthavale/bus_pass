@@ -3,309 +3,657 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search by Pass Number - Bus Pass</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>View Pass - Bus Pass System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
+            --primary-color: #4a90e2;
             --secondary-color: #2c3e50;
             --accent-color: #e74c3c;
             --success-color: #2ecc71;
+            --info-color: #3498db;
         }
-        
+
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         .navbar {
             background: var(--secondary-color);
             padding: 1rem 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         .navbar-brand {
             color: white !important;
             font-size: 1.5rem;
             font-weight: bold;
         }
-        
+
         .nav-link {
             color: rgba(255,255,255,0.8) !important;
             transition: color 0.3s ease;
         }
-        
+
         .nav-link:hover {
             color: white !important;
         }
-        
+
         .main-content {
             padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        
+
         .search-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
             background: white;
+            padding: 2rem;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
             animation: fadeIn 0.5s ease-out;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .search-header {
             text-align: center;
             margin-bottom: 2rem;
         }
-        
+
         .search-header h2 {
             color: var(--secondary-color);
             margin-bottom: 1rem;
         }
-        
-        .search-header p {
-            color: #7f8c8d;
-        }
-        
-        .search-form {
-            margin-top: 2rem;
-        }
-        
-        .input-group {
-            margin-bottom: 1rem;
-            position: relative;
-        }
-        
-        .input-group-text {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control {
-            border: 2px solid #e9ecef;
-            padding: 0.8rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            padding: 0.8rem 2rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-            transform: translateY(-2px);
-        }
-        
-        .error-message {
-            color: var(--accent-color);
-            text-align: center;
-            margin-top: 1rem;
+
+        .recent-passes {
+            background: #f8f9fa;
             padding: 1rem;
-            background: rgba(231, 76, 60, 0.1);
-            border-radius: 8px;
-            animation: shake 0.5s ease-in-out;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+        .recent-passes h4 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
         }
-        
-        .back-link {
-            text-align: center;
-            margin-top: 1rem;
+
+        .recent-pass-item {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
-        
-        .back-link a {
+
+        .recent-pass-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .recent-pass-item a {
             color: var(--primary-color);
             text-decoration: none;
-            transition: color 0.3s ease;
         }
-        
-        .back-link a:hover {
-            color: #2980b9;
+
+        .recent-pass-item a:hover {
+            color: #357abd;
         }
-        
-        .format-hint {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-            margin-top: 0.5rem;
+
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .pass-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .pass-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .pass-photo {
+            flex: 1;
+            min-width: 300px;
             text-align: center;
         }
-        
-        .recent-passes {
+
+        .user-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .pass-details h3 {
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-label {
+            width: 200px;
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .notification {
+            background: white;
+            border-left: 4px solid var(--success-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification i {
+            font-size: 1.2rem;
+            color: var(--success-color);
+        }
+
+        .notification.error {
+            border-left-color: var(--accent-color);
+        }
+
+        .notification.error i {
+            color: var(--accent-color);
+        }
+
+        .notification.info {
+            border-left-color: var(--info-color);
+        }
+
+        .notification.info i {
+            color: var(--info-color);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        .modal.fade .modal-dialog {
+            transform: scale(0.8);
+            transition: transform 0.5s ease-out;
+        }
+
+        .modal.show .modal-dialog {
+            transform: scale(1);
+        }
+
+        .modal-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .modal.show .modal-content {
+            opacity: 1;
+        }
+
+        .pass-details {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-out;
+        }
+
+        .modal.show .pass-details {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .detail-row {
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.3s ease-out;
+        }
+
+        .modal.show .detail-row {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .detail-row:nth-child(1) { transition-delay: 0.1s; }
+        .detail-row:nth-child(2) { transition-delay: 0.2s; }
+        .detail-row:nth-child(3) { transition-delay: 0.3s; }
+        .detail-row:nth-child(4) { transition-delay: 0.4s; }
+        .detail-row:nth-child(5) { transition-delay: 0.5s; }
+
+        .pass-photo {
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.5s ease-out;
+        }
+
+        .modal.show .pass-photo {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .action-buttons {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-out;
+        }
+
+        .modal.show .action-buttons {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .download-btn {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+            color: white;
+        }
+
+        .qr-code {
+            text-align: center;
             margin-top: 2rem;
             padding: 1rem;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 10px;
         }
-        
-        .recent-passes h5 {
-            color: var(--secondary-color);
-            margin-bottom: 1rem;
-        }
-        
-        .recent-pass-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .recent-pass-item:hover {
-            background: #e9ecef;
-        }
-        
-        .recent-pass-item:last-child {
-            border-bottom: none;
-        }
-        
-        .validation-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--success-color);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .input-group.valid .validation-icon {
-            opacity: 1;
-        }
-        
-        @media (max-width: 768px) {
-            .search-container {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
+
+        .qr-code img {
+            max-width: 200px;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-bus me-2"></i>Bus Pass System
-            </a>
+            <a class="navbar-brand" href="{{ url_for('index') }}">Bus Pass System</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Home</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register"><i class="fas fa-user-plus me-1"></i> Register</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/view_pass"><i class="fas fa-eye me-1"></i> View Pass</a>
-                    </li>
+                    {% if session.get('user_id') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('view_pass') }}">View Pass</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('renew') }}">Renew Pass</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register_user') }}">Register</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
     <div class="main-content">
-        <div class="container">
-            <div class="search-container">
-                <div class="search-header">
-                    <h2><i class="fas fa-search me-2"></i>Search by Pass Number</h2>
-                    <p>Enter your pass number to view your bus pass details</p>
-                </div>
+        <div class="search-container">
+            <div class="search-header">
+                <h2>View Your Bus Pass</h2>
+                <p>Enter your pass number to view details</p>
+            </div>
 
-                {% if error %}
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+            {% if recent_passes %}
+            <div class="recent-passes">
+                <h4><i class="fas fa-history me-2"></i>Recent Passes</h4>
+                <div>
+                    {% for pass in recent_passes %}
+                    <div class="recent-pass-item">
+                        <a href="{{ url_for('view_pass', pass_number=pass['pass_number']) }}" 
+                           data-pass-number="{{ pass['pass_number'] }}" 
+                           data-pass-name="{{ pass['name'] }}">
+                            {{ pass['pass_number'] }} - {{ pass['name'] }}
+                        </a>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                <form action="/display" method="get" class="search-form" id="passSearchForm">
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-hashtag"></i>
-                        </span>
-                        <input type="text" class="form-control" name="pass_number" 
-                               id="passNumber" placeholder="Enter your Pass Number (e.g., BP-123456)" 
-                               pattern="BP-\d{6}" required>
-                        <i class="fas fa-check validation-icon"></i>
-                    </div>
-                    <div class="format-hint">
-                        <i class="fas fa-info-circle me-1"></i> Format: BP- followed by 6 digits (e.g., BP-123456)
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-3">
+            <form method="GET" action="{{ url_for('view_pass') }}" class="search-form">
+                <div class="mb-3">
+                    <label for="pass_number" class="form-label">Pass Number</label>
+                    <input type="text" class="form-control" id="pass_number" name="pass_number" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search me-2"></i>Search Pass
                     </button>
-                </form>
-
-                <div class="recent-passes">
-                    <h5><i class="fas fa-history me-2"></i>Recent Passes</h5>
-                    <div class="recent-pass-item">
-                        <i class="fas fa-hashtag me-2"></i>BP-123456
-                    </div>
-                    <div class="recent-pass-item">
-                        <i class="fas fa-hashtag me-2"></i>BP-789012
-                    </div>
-                    <div class="recent-pass-item">
-                        <i class="fas fa-hashtag me-2"></i>BP-345678
-                    </div>
                 </div>
+            </form>
+        </div>
 
-                <div class="back-link mt-3">
-                    <a href="/"><i class="fas fa-arrow-left me-2"></i>Back to Home</a>
+        {% if pass_details %}
+        <div class="modal fade show" id="passModal" tabindex="-1" aria-labelledby="passModalLabel" aria-hidden="false" style="display: block;">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="passModalLabel">Pass Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="pass-details">
+                            <div class="pass-info">
+                                <h3>Pass Information</h3>
+                                <div class="detail-row">
+                                    <div class="detail-label">Pass Number</div>
+                                    <div class="detail-value">{{ pass_details.pass_number }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Name</div>
+                                    <div class="detail-value">{{ pass_details.name }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Valid From</div>
+                                    <div class="detail-value">{{ pass_details.valid_from }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Valid Until</div>
+                                    <div class="detail-value">{{ pass_details.valid_until }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Status</div>
+                                    <div class="detail-value">
+                                        <span class="badge {% if pass_details.status == 'Active' %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ pass_details.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('renew') }}" class="btn btn-primary">
+                                        <i class="fas fa-sync-alt me-2"></i>Renew Pass
+                                    </a>
+                                    <a href="#" class="download-btn" onclick="downloadPass()">
+                                        <i class="fas fa-download me-2"></i>Download Pass
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="pass-photo">
+                                {% if pass_details.photo_data %}
+                                    <img src="{{ pass_details.photo_data }}" alt="User Photo" class="user-photo">
+                                {% else %}
+                                    <div class="user-photo-placeholder">
+                                        <i class="fas fa-user fa-4x" style="color: #ccc;"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if pass_details.qr_code %}
+                                <div class="qr-code">
+                                    <img src="{{ pass_details.qr_code }}" alt="QR Code" class="img-fluid">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="modal-backdrop fade show"></div>
+        {% endif %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="notification-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification {% if category == 'error' %}error{% elif category == 'info' %}info{% endif %}">
+                        <i class="fas {% if category == 'error' %}fa-exclamation-circle{% elif category == 'info' %}fa-info-circle{% else %}fa-check-circle{% endif %}"></i>
+                        <div>
+                            <strong>{% if category == 'error' %}Error{% elif category == 'info' %}Info{% else %}Success{% endif %}</strong>
+                            <p class="mb-0">{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const passNumberInput = document.getElementById('passNumber');
-            const inputGroup = passNumberInput.parentElement;
-            
-            // Add validation on input
-            passNumberInput.addEventListener('input', function() {
-                if (this.value.match(/^BP-\d{6}$/)) {
-                    inputGroup.classList.add('valid');
-                } else {
-                    inputGroup.classList.remove('valid');
-                }
+            // Auto-hide notifications after 5 seconds
+            const notifications = document.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out forwards';
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
             });
-            
-            // Add click handler for recent passes
-            document.querySelectorAll('.recent-pass-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const passNumber = this.textContent.trim();
-                    passNumberInput.value = passNumber;
-                    inputGroup.classList.add('valid');
+
+            // Handle modal close button
+            const closeButton = document.querySelector('.btn-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    const modal = document.getElementById('passModal');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                    }
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
                 });
-            });
+            }
         });
+
+        function downloadPass() {
+            // Get the modal content
+            const modalContent = document.querySelector('.modal-content');
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            
+            // Write the HTML content
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Bus Pass - {{ pass_details.pass_number }}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        .pass-container { padding: 20px; }
+                        .pass-header { text-align: center; margin-bottom: 20px; }
+                        .pass-details { display: flex; gap: 20px; }
+                        .pass-info { flex: 1; }
+                        .pass-photo { flex: 1; text-align: center; }
+                        .user-photo { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
+                        .qr-code { text-align: center; margin-top: 20px; }
+                        .qr-code img { max-width: 150px; }
+                        .detail-row { margin-bottom: 10px; }
+                        .detail-label { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="pass-container">
+                        <div class="pass-header">
+                            <h2>Bus Pass</h2>
+                            <p>Pass Number: {{ pass_details.pass_number }}</p>
+                        </div>
+                        <div class="pass-details">
+                            <div class="pass-info">
+                                <div class="detail-row">
+                                    <div class="detail-label">Name:</div>
+                                    <div>{{ pass_details.name }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Valid From:</div>
+                                    <div>{{ pass_details.valid_from }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Valid Until:</div>
+                                    <div>{{ pass_details.valid_until }}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Status:</div>
+                                    <div>{{ pass_details.status }}</div>
+                                </div>
+                            </div>
+                            <div class="pass-photo">
+                                {% if pass_details.photo_data %}
+                                    <img src="{{ pass_details.photo_data }}" alt="User Photo" class="user-photo">
+                                {% endif %}
+                                {% if pass_details.qr_code %}
+                                <div class="qr-code">
+                                    <img src="{{ pass_details.qr_code }}" alt="QR Code">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            // Close the document
+            printWindow.document.close();
+            
+            // Wait for images to load
+            setTimeout(() => {
+                printWindow.print();
+            }, 1000);
+        }
     </script>
 </body>
 </html> 

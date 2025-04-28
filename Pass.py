@@ -98,7 +98,7 @@ def generate_qr_code(pass_number):
     try:
         # Create QR code data
         qr_data = f"Pass Number: {pass_number}"
-        
+
         # Create QR code image
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(qr_data)
@@ -201,10 +201,17 @@ def login():
             cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
             user = cursor.fetchone()
             
-            if user and user['password'] == password:  # In production, use proper password hashing
+            if user and user['password'] == password:
                 session['user_id'] = user['id']
                 session['username'] = user['username']
-                flash('Login successful!', 'success')
+                fun_messages = [
+                    "Welcome back! Ready to ride the bus wave? 🚌",
+                    "Hey there! Your bus pass adventure continues! 🎉",
+                    "Welcome aboard! Let's make some bus memories! 🌟",
+                    "Great to see you! Time to hop on the bus express! 🚀",
+                    "You're back! The bus misses you! 🚌💨"
+                ]
+                flash(random.choice(fun_messages), 'success')
                 return redirect(url_for('index'))
             else:
                 flash('Invalid username or password', 'error')
@@ -239,7 +246,14 @@ def register_user():
             ''', (username, password, email))
             
             conn.commit()
-            flash('Registration successful! Please login.', 'success')
+            fun_messages = [
+                "Welcome aboard! Your bus pass adventure begins! 🚌",
+                "Great choice! You're now part of the bus pass family! 🎉",
+                "Registration complete! Time to hop on the bus! 🚀",
+                "You're in! Let's make some bus memories! 🌟",
+                "Account created! The bus is waiting for you! 🚌💨"
+            ]
+            flash(random.choice(fun_messages), 'success')
             return redirect(url_for('login'))
         except Exception as e:
             flash('An error occurred during registration', 'error')
@@ -250,8 +264,16 @@ def register_user():
 
 @app.route('/logout')
 def logout():
+    username = session.get('username', 'friend')
     session.clear()
-    flash('You have been logged out', 'info')
+    fun_messages = [
+        f"Bye {username}! Don't forget to wave at the bus! 👋",
+        f"See you later {username}! The bus will miss you! 🚌",
+        f"Take care {username}! Come back soon for more bus adventures! 🌟",
+        f"Farewell {username}! Your bus pass will be waiting! 🎫",
+        f"Until next time {username}! Keep riding the bus wave! 🌊"
+    ]
+    flash(random.choice(fun_messages), 'info')
     return redirect(url_for('index'))
 
 # Add login required decorator
@@ -347,7 +369,7 @@ def register():
             if conn:
                 conn.rollback()
             return f'Registration error: {str(e)}', 500
-            
+
         finally:
             if conn:
                 conn.close()
@@ -501,6 +523,14 @@ def scan_qr():
                         cap.release()
                         cv2.destroyAllWindows()
                         
+                        fun_messages = [
+                            "QR Code scanned successfully! 🎯",
+                            "Got it! Your pass details are ready! ✅",
+                            "Scan complete! Time to check your pass! 🔍",
+                            "Perfect scan! Here's your pass info! ✨",
+                            "QR Code detected! Let's see your pass! 🚌"
+                        ]
+                        flash(random.choice(fun_messages), 'success')
                         return pass_details
                     else:
                         print(f"Pass number {pass_number} not found in database")  # Debug log
@@ -519,6 +549,14 @@ def scan_qr():
     cap.release()
     cv2.destroyAllWindows()
 
+    fun_messages = [
+        "Oops! No QR code detected. Try again! 🔄",
+        "Let's try scanning that QR code again! 📱",
+        "No QR code found. Make sure it's in view! 👀",
+        "Scan failed. Let's give it another shot! 🎯",
+        "Couldn't read the QR code. Try repositioning! 🔄"
+    ]
+    flash(random.choice(fun_messages), 'error')
     return "No valid QR code detected or pass not found. Please try again.", 400
 
 @app.route('/display', methods=['GET', 'POST'])
@@ -580,7 +618,7 @@ def display_pass():
                                 image_path=image_path,
                                 qr_code=pass_data['qr_code'],
                                 today=datetime.date.today())
-        else:
+        else:   
             print(f"Pass not found for pass_number: {pass_number}")  # Debug log
             return "Pass not found", 404
             
@@ -591,7 +629,6 @@ def display_pass():
     finally:
         if conn:
             conn.close()
-
 @app.route('/renew/<pass_number>', methods=['GET', 'POST'])
 def renew_pass(pass_number):
     if request.method == 'POST':
@@ -780,11 +817,104 @@ def debug_db():
     except Exception as e:
         return f"Error: {str(e)}", 500
 
-@app.route('/view_pass', methods=['GET'])
+@app.route('/view_pass', methods=['GET', 'POST'])
 @login_required
 def view_pass():
-    """Render the view pass search page."""
-    return render_template('view_pass.html')
+    """Handle viewing pass details."""
+    if request.method == 'POST':
+        pass_number = request.form.get('pass_number')
+    else:
+        pass_number = request.args.get('pass_number')
+    
+    print(f"Received pass number: {pass_number}")  # Debug log
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get recent pass numbers
+        cursor.execute('''
+            SELECT pass_number, name 
+            FROM bus_passes 
+            ORDER BY created_at DESC 
+            LIMIT 5
+        ''')
+        recent_passes = cursor.fetchall()
+        
+        # Initialize pass_details as None
+        pass_details = None
+        
+        if pass_number:
+            # Debug: Print the SQL query
+            query = "SELECT * FROM bus_passes WHERE pass_number = ?"
+            print(f"Executing query: {query} with pass_number: {pass_number}")
+            
+            # Get pass details
+            cursor.execute(query, (pass_number,))
+            pass_data = cursor.fetchone()
+            
+            if pass_data:
+                print(f"Retrieved pass data: {pass_data}")  # Debug log
+                
+                # Convert to dictionary for easier access
+                pass_data = dict(pass_data)
+                print(f"Converted pass data to dict: {pass_data}")  # Debug log
+                
+                # Handle photo data
+                photo_data = None
+                if pass_data.get('photo_data'):
+                    if pass_data['photo_data'].startswith('data:image'):
+                        photo_data = pass_data['photo_data']
+                    else:
+                        if not pass_data['photo_data'].startswith('static/'):
+                            photo_data = f"static/{pass_data['photo_data']}"
+                        else:
+                            photo_data = pass_data['photo_data']
+                
+                # Handle QR code data
+                qr_code = None
+                if pass_data.get('qr_code'):
+                    if not pass_data['qr_code'].startswith('static/'):
+                        qr_code = f"static/{pass_data['qr_code']}"
+                    else:
+                        qr_code = pass_data['qr_code']
+                
+                # Check if pass is active
+                valid_until = datetime.datetime.strptime(pass_data['valid_until'], '%Y-%m-%d').date()
+                today = datetime.date.today()
+                status = 'Active' if valid_until >= today else 'Expired'
+                
+                # Prepare pass details with safe dictionary access
+                pass_details = {
+                    'pass_number': pass_data.get('pass_number', ''),
+                    'name': pass_data.get('name', ''),
+                    'valid_from': pass_data.get('valid_from', 'Not specified'),
+                    'valid_until': pass_data.get('valid_until', ''),
+                    'status': status,
+                    'photo_data': photo_data,
+                    'qr_code': qr_code
+                }
+            else:
+                print(f"Pass not found for pass_number: {pass_number}")  # Debug log
+                flash('Pass not found', 'error')
+        
+        print(f"Rendering template with pass_details: {pass_details}")  # Debug log
+        
+        return render_template('view_pass.html', 
+                            pass_details=pass_details,
+                            recent_passes=recent_passes)
+        
+    except Exception as e:
+        print(f"Error viewing pass: {str(e)}")  # Debug log
+        print(f"Error type: {type(e)}")  # Debug log
+        print(f"Error args: {e.args}")  # Debug log
+        flash('An error occurred while viewing the pass', 'error')
+        return render_template('view_pass.html', 
+                            pass_details=None,
+                            recent_passes=[])
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/renew', methods=['GET'])
 @login_required
