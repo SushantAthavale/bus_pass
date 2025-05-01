@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Bus Pass Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,.1);
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .stat-card.total-passes {
+            background-color: #007bff;
+        }
+        .stat-card.active-passes {
+            background-color: #28a745;
+        }
+        .stat-card.expired-passes {
+            background-color: #dc3545;
+        }
+        .stat-card.total-users {
+            background-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4>Admin Dashboard</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_users') }}">
+                                <i class="bi bi-people me-2"></i>
+                                Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_passes') }}">
+                                <i class="bi bi-card-text me-2"></i>
+                                Passes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_reports') }}">
+                                <i class="bi bi-graph-up me-2"></i>
+                                Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                                <i class="bi bi-gear me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard Overview</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">Print</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card total-passes">
+                            <h3 id="total-passes">0</h3>
+                            <p>Total Passes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card active-passes">
+                            <h3 id="active-passes">0</h3>
+                            <p>Active Passes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card expired-passes">
+                            <h3 id="expired-passes">0</h3>
+                            <p>Expired Passes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card total-users">
+                            <h3 id="total-users">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Recent Pass Registrations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Pass Number</th>
+                                                <th>Name</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recent-passes">
+                                            <!-- Will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Recent User Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Action</th>
+                                                <th>Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recent-activity">
+                                            <!-- Will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to load dashboard statistics
+        function loadDashboardStats() {
+            fetch('/admin/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-passes').textContent = data.total_passes;
+                    document.getElementById('active-passes').textContent = data.active_passes;
+                    document.getElementById('expired-passes').textContent = data.expired_passes;
+                    document.getElementById('total-users').textContent = data.total_users;
+                });
+        }
+
+        // Function to load recent passes
+        function loadRecentPasses() {
+            fetch('/admin/recent_passes')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('recent-passes');
+                    tbody.innerHTML = '';
+                    data.forEach(pass => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${pass.pass_number}</td>
+                                <td>${pass.name}</td>
+                                <td>${pass.created_at}</td>
+                                <td>${pass.status}</td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // Function to load recent activity
+        function loadRecentActivity() {
+            fetch('/admin/recent_activity')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('recent-activity');
+                    tbody.innerHTML = '';
+                    data.forEach(activity => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${activity.username}</td>
+                                <td>${activity.action}</td>
+                                <td>${activity.timestamp}</td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // Load all data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            loadRecentPasses();
+            loadRecentActivity();
+        });
+    </script>
+</body>
+</html> 

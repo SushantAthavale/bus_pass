@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Bus Pass Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .sidebar a.active {
+            background-color: #0d6efd;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h4 class="text-white text-center mb-4">Admin Panel</h4>
+                <a href="/admin"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a href="/admin/users"><i class="bi bi-people me-2"></i>Users</a>
+                <a href="/admin/passes"><i class="bi bi-ticket-perforated me-2"></i>Passes</a>
+                <a href="/admin/reports" class="active"><i class="bi bi-graph-up me-2"></i>Reports</a>
+                <a href="/admin/settings"><i class="bi bi-gear me-2"></i>Settings</a>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <h2 class="mb-4">Reports</h2>
+
+                <!-- Pass Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Pass Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="passStatusChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="districtDistributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">User Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Reports -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Export Reports</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" onclick="exportPassReport()">
+                                    <i class="bi bi-download me-2"></i>Export Pass Report
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" onclick="exportUserReport()">
+                                    <i class="bi bi-download me-2"></i>Export User Report
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" onclick="exportActivityReport()">
+                                    <i class="bi bi-download me-2"></i>Export Activity Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Load pass status data
+        fetch('/admin/stats')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('passStatusChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Active Passes', 'Expired Passes'],
+                        datasets: [{
+                            data: [data.active_passes, data.expired_passes],
+                            backgroundColor: ['#28a745', '#dc3545']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            });
+
+        // Load district distribution data
+        fetch('/admin/districts')
+            .then(response => response.json())
+            .then(districts => {
+                const districtData = {};
+                districts.forEach(district => {
+                    districtData[district] = 0;
+                });
+
+                fetch('/admin/passes')
+                    .then(response => response.json())
+                    .then(passes => {
+                        passes.forEach(pass_data => {
+                            districtData[pass_data.district]++;
+                        });
+
+                        const ctx = document.getElementById('districtDistributionChart').getContext('2d');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: Object.keys(districtData),
+                                datasets: [{
+                                    label: 'Number of Passes',
+                                    data: Object.values(districtData),
+                                    backgroundColor: '#0d6efd'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                    });
+            });
+
+        // Load user activity data
+        fetch('/admin/recent_activity')
+            .then(response => response.json())
+            .then(activities => {
+                const activityData = {};
+                activities.forEach(activity => {
+                    const date = new Date(activity.timestamp).toLocaleDateString();
+                    if (!activityData[date]) {
+                        activityData[date] = 0;
+                    }
+                    activityData[date]++;
+                });
+
+                const ctx = document.getElementById('userActivityChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Object.keys(activityData),
+                        datasets: [{
+                            label: 'User Activities',
+                            data: Object.values(activityData),
+                            borderColor: '#0d6efd',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            });
+
+        // Export functions
+        function exportPassReport() {
+            window.location.href = '/admin/passes/export';
+        }
+
+        function exportUserReport() {
+            window.location.href = '/admin/users/export';
+        }
+
+        function exportActivityReport() {
+            window.location.href = '/admin/activity/export';
+        }
+    </script>
+</body>
+</html> 

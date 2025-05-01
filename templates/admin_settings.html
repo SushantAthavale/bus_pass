@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Bus Pass Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .sidebar a.active {
+            background-color: #0d6efd;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h4 class="text-white text-center mb-4">Admin Panel</h4>
+                <a href="/admin"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a href="/admin/users"><i class="bi bi-people me-2"></i>Users</a>
+                <a href="/admin/passes"><i class="bi bi-ticket-perforated me-2"></i>Passes</a>
+                <a href="/admin/reports"><i class="bi bi-graph-up me-2"></i>Reports</a>
+                <a href="/admin/settings" class="active"><i class="bi bi-gear me-2"></i>Settings</a>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <h2 class="mb-4">Settings</h2>
+
+                <!-- System Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">System Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="systemSettingsForm">
+                            <div class="form-group">
+                                <label for="passValidity">Pass Validity Period (months)</label>
+                                <input type="number" class="form-control" id="passValidity" min="1" max="12" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="maxPassesPerUser">Maximum Passes per User</label>
+                                <input type="number" class="form-control" id="maxPassesPerUser" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="notificationDays">Notification Days Before Expiry</label>
+                                <input type="number" class="form-control" id="notificationDays" min="1" max="30" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save System Settings</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Email Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Email Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="emailSettingsForm">
+                            <div class="form-group">
+                                <label for="smtpServer">SMTP Server</label>
+                                <input type="text" class="form-control" id="smtpServer" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="smtpPort">SMTP Port</label>
+                                <input type="number" class="form-control" id="smtpPort" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="smtpUsername">SMTP Username</label>
+                                <input type="text" class="form-control" id="smtpUsername" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="smtpPassword">SMTP Password</label>
+                                <input type="password" class="form-control" id="smtpPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fromEmail">From Email Address</label>
+                                <input type="email" class="form-control" id="fromEmail" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Email Settings</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Backup Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Backup Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="backupSettingsForm">
+                            <div class="form-group">
+                                <label for="backupFrequency">Backup Frequency</label>
+                                <select class="form-control" id="backupFrequency" required>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="backupLocation">Backup Location</label>
+                                <input type="text" class="form-control" id="backupLocation" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="retentionPeriod">Retention Period (days)</label>
+                                <input type="number" class="form-control" id="retentionPeriod" min="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Backup Settings</button>
+                        </form>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-success" onclick="createBackup()">
+                                <i class="bi bi-download me-2"></i>Create Backup Now
+                            </button>
+                            <button class="btn btn-info" onclick="restoreBackup()">
+                                <i class="bi bi-upload me-2"></i>Restore from Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load current settings
+        function loadSettings() {
+            fetch('/admin/settings/get')
+                .then(response => response.json())
+                .then(settings => {
+                    // System settings
+                    document.getElementById('passValidity').value = settings.passValidity || 6;
+                    document.getElementById('maxPassesPerUser').value = settings.maxPassesPerUser || 1;
+                    document.getElementById('notificationDays').value = settings.notificationDays || 7;
+
+                    // Email settings
+                    document.getElementById('smtpServer').value = settings.smtpServer || '';
+                    document.getElementById('smtpPort').value = settings.smtpPort || 587;
+                    document.getElementById('smtpUsername').value = settings.smtpUsername || '';
+                    document.getElementById('smtpPassword').value = settings.smtpPassword || '';
+                    document.getElementById('fromEmail').value = settings.fromEmail || '';
+
+                    // Backup settings
+                    document.getElementById('backupFrequency').value = settings.backupFrequency || 'daily';
+                    document.getElementById('backupLocation').value = settings.backupLocation || '';
+                    document.getElementById('retentionPeriod').value = settings.retentionPeriod || 30;
+                });
+        }
+
+        // Save system settings
+        document.getElementById('systemSettingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const settings = {
+                passValidity: document.getElementById('passValidity').value,
+                maxPassesPerUser: document.getElementById('maxPassesPerUser').value,
+                notificationDays: document.getElementById('notificationDays').value
+            };
+
+            fetch('/admin/settings/system', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('System settings saved successfully');
+                } else {
+                    alert('Error saving system settings: ' + data.message);
+                }
+            });
+        });
+
+        // Save email settings
+        document.getElementById('emailSettingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const settings = {
+                smtpServer: document.getElementById('smtpServer').value,
+                smtpPort: document.getElementById('smtpPort').value,
+                smtpUsername: document.getElementById('smtpUsername').value,
+                smtpPassword: document.getElementById('smtpPassword').value,
+                fromEmail: document.getElementById('fromEmail').value
+            };
+
+            fetch('/admin/settings/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Email settings saved successfully');
+                } else {
+                    alert('Error saving email settings: ' + data.message);
+                }
+            });
+        });
+
+        // Save backup settings
+        document.getElementById('backupSettingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const settings = {
+                backupFrequency: document.getElementById('backupFrequency').value,
+                backupLocation: document.getElementById('backupLocation').value,
+                retentionPeriod: document.getElementById('retentionPeriod').value
+            };
+
+            fetch('/admin/settings/backup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Backup settings saved successfully');
+                } else {
+                    alert('Error saving backup settings: ' + data.message);
+                }
+            });
+        });
+
+        // Create backup
+        function createBackup() {
+            if (confirm('Are you sure you want to create a backup now?')) {
+                fetch('/admin/settings/backup/create', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Backup created successfully');
+                    } else {
+                        alert('Error creating backup: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        // Restore backup
+        function restoreBackup() {
+            if (confirm('Are you sure you want to restore from backup? This will overwrite current data.')) {
+                fetch('/admin/settings/backup/restore', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Backup restored successfully');
+                    } else {
+                        alert('Error restoring backup: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        // Load settings when page loads
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+</html> 

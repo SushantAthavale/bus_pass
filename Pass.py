@@ -7,7 +7,7 @@ import random
 import hashlib
 import base64
 import secrets
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, jsonify, Response
 from werkzeug.security import generate_password_hash
 from functools import wraps
 
@@ -82,6 +82,44 @@ def init_db():
         )
     ''')
     
+    # Check if is_admin column exists
+    cursor.execute("PRAGMA table_info(users)")
+    columns = [column[1] for column in cursor.fetchall()]
+    
+    if 'is_admin' not in columns:
+        cursor.execute('ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0')
+        conn.commit()
+    
+    # Create user_activity table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            username TEXT,
+            action TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Create settings table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            passValidity INTEGER DEFAULT 6,
+            maxPassesPerUser INTEGER DEFAULT 1,
+            notificationDays INTEGER DEFAULT 7,
+            smtpServer TEXT,
+            smtpPort INTEGER DEFAULT 587,
+            smtpUsername TEXT,
+            smtpPassword TEXT,
+            fromEmail TEXT,
+            backupFrequency TEXT DEFAULT 'daily',
+            backupLocation TEXT DEFAULT 'backups',
+            retentionPeriod INTEGER DEFAULT 30
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -141,48 +179,48 @@ def save_base64_image(base64_data, pass_number):
         print(f"Error saving image: {e}")
         return None
 
-def generate_otp():
-    """Generates a 6-digit OTP."""
-    return str(random.randint(100000, 999999))
+# def generate_otp():
+#     """Generates a 6-digit OTP."""
+#     return str(random.randint(100000, 999999))
 
-def verify_otp(email, mobile, otp):
-    """Verify the OTP entered by the user."""
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+# def verify_otp(email, mobile, otp):
+#     """Verify the OTP entered by the user."""
+#     conn = None
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
         
-        # Get the most recent OTP for the user (within last 5 minutes)
-        cursor.execute('''
-            SELECT otp FROM otp_verification 
-            WHERE email = ? AND mobile = ? 
-            AND created_at >= datetime('now', '-5 minutes')
-            ORDER BY created_at DESC LIMIT 1
-        ''', (email, mobile))
+#         # Get the most recent OTP for the user (within last 5 minutes)
+#         cursor.execute('''
+#             SELECT otp FROM otp_verification 
+#             WHERE email = ? AND mobile = ? 
+#             AND created_at >= datetime('now', '-5 minutes')
+#             ORDER BY created_at DESC LIMIT 1
+#         ''', (email, mobile))
         
-        result = cursor.fetchone()
+#         result = cursor.fetchone()
         
-        if result and str(result[0]) == str(otp):
-            # Delete the used OTP
-            cursor.execute('''
-                DELETE FROM otp_verification 
-                WHERE email = ? AND mobile = ? AND otp = ?
-            ''', (email, mobile, otp))
+#         if result and str(result[0]) == str(otp):
+#             # Delete the used OTP
+#             cursor.execute('''
+#                 DELETE FROM otp_verification 
+#                 WHERE email = ? AND mobile = ? AND otp = ?
+#             ''', (email, mobile, otp))
             
-            conn.commit()
-            return True
+#             conn.commit()
+#             return True
             
-        return False
+#         return False
         
-    except Exception as e:
-        print(f"Error verifying OTP: {str(e)}")
-        if conn:
-            conn.rollback()
-        return False
+#     except Exception as e:
+#         print(f"Error verifying OTP: {str(e)}")
+#         if conn:
+#             conn.rollback()
+#         return False
         
-    finally:
-        if conn:
-            conn.close()
+#     finally:
+#         if conn:
+#             conn.close()
 
 @app.route('/')
 def index():
@@ -204,6 +242,11 @@ def login():
             if user and user['password'] == password:
                 session['user_id'] = user['id']
                 session['username'] = user['username']
+                session['is_admin'] = user['is_admin']
+                
+                # Log the login
+                log_user_activity(user['id'], username, 'User login')
+                
                 fun_messages = [
                     "Welcome back! Ready to ride the bus wave? 🚌",
                     "Hey there! Your bus pass adventure continues! 🎉",
@@ -228,35 +271,26 @@ def register_user():
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
+        is_admin = request.form.get('is_admin', 0)  # Default to 0 (not admin)
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
-            # Check if username or email already exists
-            cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (username, email))
-            if cursor.fetchone():
-                flash('Username or email already exists', 'error')
-                return redirect(url_for('register_user'))
-            
-            # Insert new user
             cursor.execute('''
-                INSERT INTO users (username, password, email)
-                VALUES (?, ?, ?)
-            ''', (username, password, email))
+                INSERT INTO users (username, password, email, is_admin)
+                VALUES (?, ?, ?, ?)
+            ''', (username, password, email, is_admin))
             
             conn.commit()
-            fun_messages = [
-                "Welcome aboard! Your bus pass adventure begins! 🚌",
-                "Great choice! You're now part of the bus pass family! 🎉",
-                "Registration complete! Time to hop on the bus! 🚀",
-                "You're in! Let's make some bus memories! 🌟",
-                "Account created! The bus is waiting for you! 🚌💨"
-            ]
-            flash(random.choice(fun_messages), 'success')
+            flash('Registration successful! Please login.', 'success')
+            
+            # Log the registration
+            log_user_activity(cursor.lastrowid, username, 'User registration')
+            
             return redirect(url_for('login'))
-        except Exception as e:
-            flash('An error occurred during registration', 'error')
+        except sqlite3.IntegrityError:
+            flash('Username or email already exists!', 'error')
         finally:
             conn.close()
     
@@ -349,6 +383,10 @@ def register():
                 
                 conn.commit()
                 print(f"Successfully stored pass data for {pass_number}")  # Debug log
+                
+                # Log the pass registration
+                log_user_activity(session['user_id'], session['username'], 
+                                 f'Registered new pass: {pass_number}')
                 
                 # Redirect to success page with all necessary parameters
                 return redirect(url_for('registration_success',
@@ -700,7 +738,12 @@ def renew_pass(pass_number):
                     conn.commit()
                     print("Update successful, changes committed")  # Debug log
                     flash("Pass renewed successfully!", "success")
-                    return redirect(url_for('display_pass', pass_number=pass_number))
+                    
+                    # Log the pass renewal
+                    log_user_activity(session['user_id'], session['username'], 
+                                     f'Renewed pass: {pass_number}')
+                    
+                    return redirect(url_for('view_pass', pass_number=pass_number))
                 else:
                     # Rollback if verification failed
                     conn.rollback()
@@ -921,6 +964,578 @@ def view_pass():
 def renew():
     """Render the renew pass search page."""
     return render_template('renew.html')
+
+# Admin routes
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user['is_admin']:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('admin.html')
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user['is_admin']:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('admin_users.html')
+
+@app.route('/admin/users/data')
+@login_required
+def admin_users_data():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get all users
+    cursor.execute('SELECT id, username, email, is_admin, created_at FROM users')
+    users = cursor.fetchall()
+    conn.close()
+    
+    return jsonify([dict(user) for user in users])
+
+@app.route('/admin/passes')
+@login_required
+def admin_passes():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user['is_admin']:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('admin_passes.html')
+
+@app.route('/admin/passes/data')
+@login_required
+def admin_passes_data():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get filter parameters
+    status = request.args.get('status', '')
+    district = request.args.get('district', '')
+    search = request.args.get('search', '')
+    
+    # Build query
+    query = '''
+        SELECT pass_number, name, email, district, valid_until,
+               CASE 
+                   WHEN valid_until >= date('now') THEN 'Active'
+                   ELSE 'Expired'
+               END as status
+        FROM bus_passes
+        WHERE 1=1
+    '''
+    params = []
+    
+    if status:
+        if status == 'active':
+            query += ' AND valid_until >= date("now")'
+        else:
+            query += ' AND valid_until < date("now")'
+    
+    if district:
+        query += ' AND district = ?'
+        params.append(district)
+    
+    if search:
+        query += ' AND (pass_number LIKE ? OR name LIKE ? OR email LIKE ?)'
+        search_param = f'%{search}%'
+        params.extend([search_param, search_param, search_param])
+    
+    query += ' ORDER BY created_at DESC'
+    
+    cursor.execute(query, params)
+    passes = cursor.fetchall()
+    conn.close()
+    
+    return jsonify([dict(pass_data) for pass_data in passes])
+
+@app.route('/admin/districts')
+@login_required
+def admin_districts():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get unique districts
+    cursor.execute('SELECT DISTINCT district FROM bus_passes ORDER BY district')
+    districts = [row['district'] for row in cursor.fetchall()]
+    conn.close()
+    
+    return jsonify(districts)
+
+@app.route('/admin/passes/export')
+@login_required
+def admin_export_passes():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get filter parameters
+    status = request.args.get('status', '')
+    district = request.args.get('district', '')
+    
+    # Build query
+    query = '''
+        SELECT pass_number, name, email, district, valid_until,
+               CASE 
+                   WHEN valid_until >= date('now') THEN 'Active'
+                   ELSE 'Expired'
+               END as status
+        FROM bus_passes
+        WHERE 1=1
+    '''
+    params = []
+    
+    if status:
+        if status == 'active':
+            query += ' AND valid_until >= date("now")'
+        else:
+            query += ' AND valid_until < date("now")'
+    
+    if district:
+        query += ' AND district = ?'
+        params.append(district)
+    
+    cursor.execute(query, params)
+    passes = cursor.fetchall()
+    conn.close()
+    
+    # Create CSV content
+    import csv
+    import io
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['Pass Number', 'Name', 'Email', 'District', 'Valid Until', 'Status'])
+    
+    # Write data
+    for pass_data in passes:
+        writer.writerow([
+            pass_data['pass_number'],
+            pass_data['name'],
+            pass_data['email'],
+            pass_data['district'],
+            pass_data['valid_until'],
+            pass_data['status']
+        ])
+    
+    output.seek(0)
+    
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=bus_passes.csv'}
+    )
+
+@app.route('/admin/reports')
+@login_required
+def admin_reports():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user['is_admin']:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('admin_reports.html')
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user['is_admin']:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('admin_settings.html')
+
+# Settings routes
+@app.route('/admin/settings/get')
+@login_required
+def get_settings():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get settings from database
+    cursor.execute('SELECT * FROM settings')
+    settings = cursor.fetchone()
+    conn.close()
+    
+    if not settings:
+        return jsonify({
+            'passValidity': 6,
+            'maxPassesPerUser': 1,
+            'notificationDays': 7,
+            'smtpServer': '',
+            'smtpPort': 587,
+            'smtpUsername': '',
+            'smtpPassword': '',
+            'fromEmail': '',
+            'backupFrequency': 'daily',
+            'backupLocation': '',
+            'retentionPeriod': 30
+        })
+    
+    return jsonify(dict(settings))
+
+@app.route('/admin/settings/system', methods=['POST'])
+@login_required
+def save_system_settings():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        data = request.get_json()
+        
+        # Update or insert system settings
+        cursor.execute('''
+            INSERT OR REPLACE INTO settings (
+                passValidity, maxPassesPerUser, notificationDays
+            ) VALUES (?, ?, ?)
+        ''', (
+            data.get('passValidity', 6),
+            data.get('maxPassesPerUser', 1),
+            data.get('notificationDays', 7)
+        ))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'System settings saved successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/settings/email', methods=['POST'])
+@login_required
+def save_email_settings():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        data = request.get_json()
+        
+        # Update or insert email settings
+        cursor.execute('''
+            INSERT OR REPLACE INTO settings (
+                smtpServer, smtpPort, smtpUsername, smtpPassword, fromEmail
+            ) VALUES (?, ?, ?, ?, ?)
+        ''', (
+            data.get('smtpServer', ''),
+            data.get('smtpPort', 587),
+            data.get('smtpUsername', ''),
+            data.get('smtpPassword', ''),
+            data.get('fromEmail', '')
+        ))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Email settings saved successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/settings/backup', methods=['POST'])
+@login_required
+def save_backup_settings():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        data = request.get_json()
+        
+        # Update or insert backup settings
+        cursor.execute('''
+            INSERT OR REPLACE INTO settings (
+                backupFrequency, backupLocation, retentionPeriod
+            ) VALUES (?, ?, ?)
+        ''', (
+            data.get('backupFrequency', 'daily'),
+            data.get('backupLocation', ''),
+            data.get('retentionPeriod', 30)
+        ))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Backup settings saved successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/settings/backup/create', methods=['POST'])
+@login_required
+def create_backup():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Get backup location from settings
+        cursor.execute('SELECT backupLocation FROM settings')
+        settings = cursor.fetchone()
+        backup_location = settings['backupLocation'] if settings else 'backups'
+        
+        # Create backup directory if it doesn't exist
+        import os
+        if not os.path.exists(backup_location):
+            os.makedirs(backup_location)
+        
+        # Create backup filename with timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = os.path.join(backup_location, f'backup_{timestamp}.db')
+        
+        # Copy database file
+        import shutil
+        shutil.copy2('bus_pass.db', backup_file)
+        
+        return jsonify({'success': True, 'message': 'Backup created successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/settings/backup/restore', methods=['POST'])
+@login_required
+def restore_backup():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Get backup location from settings
+        cursor.execute('SELECT backupLocation FROM settings')
+        settings = cursor.fetchone()
+        backup_location = settings['backupLocation'] if settings else 'backups'
+        
+        # Get list of backup files
+        import os
+        backup_files = [f for f in os.listdir(backup_location) if f.startswith('backup_') and f.endswith('.db')]
+        if not backup_files:
+            return jsonify({'success': False, 'message': 'No backup files found'})
+        
+        # Get the most recent backup
+        backup_files.sort(reverse=True)
+        latest_backup = os.path.join(backup_location, backup_files[0])
+        
+        # Restore database
+        import shutil
+        shutil.copy2(latest_backup, 'bus_pass.db')
+        
+        return jsonify({'success': True, 'message': 'Backup restored successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+# Function to log user activity
+def log_user_activity(user_id, username, action):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO user_activity (user_id, username, action)
+        VALUES (?, ?, ?)
+    ''', (user_id, username, action))
+    
+    conn.commit()
+    conn.close()
+
+@app.route('/admin/stats')
+@login_required
+def admin_stats():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get total passes
+    cursor.execute('SELECT COUNT(*) FROM bus_passes')
+    total_passes = cursor.fetchone()[0]
+    
+    # Get active passes
+    cursor.execute('SELECT COUNT(*) FROM bus_passes WHERE valid_until >= date("now")')
+    active_passes = cursor.fetchone()[0]
+    
+    # Get expired passes
+    cursor.execute('SELECT COUNT(*) FROM bus_passes WHERE valid_until < date("now")')
+    expired_passes = cursor.fetchone()[0]
+    
+    # Get total users
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+    
+    conn.close()
+    
+    return jsonify({
+        'total_passes': total_passes,
+        'active_passes': active_passes,
+        'expired_passes': expired_passes,
+        'total_users': total_users
+    })
+
+@app.route('/admin/recent_passes')
+@login_required
+def admin_recent_passes():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get recent passes
+    cursor.execute('''
+        SELECT pass_number, name, created_at,
+               CASE 
+                   WHEN valid_until >= date('now') THEN 'Active'
+                   ELSE 'Expired'
+               END as status
+        FROM bus_passes
+        ORDER BY created_at DESC
+        LIMIT 10
+    ''')
+    passes = cursor.fetchall()
+    conn.close()
+    
+    return jsonify([dict(pass_data) for pass_data in passes])
+
+@app.route('/admin/recent_activity')
+@login_required
+def admin_recent_activity():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get recent activity
+    cursor.execute('''
+        SELECT username, action, timestamp
+        FROM user_activity
+        ORDER BY timestamp DESC
+        LIMIT 10
+    ''')
+    activities = cursor.fetchall()
+    conn.close()
+    
+    return jsonify([dict(activity) for activity in activities])
 
 if __name__ == '__main__':
     init_db()

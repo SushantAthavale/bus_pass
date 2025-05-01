@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Passes - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,.1);
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+        .status-active {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-expired {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4>Admin Dashboard</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_users') }}">
+                                <i class="bi bi-people me-2"></i>
+                                Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('admin_passes') }}">
+                                <i class="bi bi-card-text me-2"></i>
+                                Passes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_reports') }}">
+                                <i class="bi bi-graph-up me-2"></i>
+                                Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_settings') }}">
+                                <i class="bi bi-gear me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Manage Bus Passes</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportPasses()">
+                                <i class="bi bi-download me-1"></i>Export
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printPasses()">
+                                <i class="bi bi-printer me-1"></i>Print
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="filterForm" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="status-filter" class="form-label">Status</label>
+                                <select class="form-select" id="status-filter">
+                                    <option value="">All</option>
+                                    <option value="active">Active</option>
+                                    <option value="expired">Expired</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="district-filter" class="form-label">District</label>
+                                <select class="form-select" id="district-filter">
+                                    <option value="">All</option>
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search-filter" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="search-filter" placeholder="Search...">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-1"></i>Filter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Passes Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Pass Number</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>District</th>
+                                        <th>Valid Until</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="passes-table-body">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to load passes
+        function loadPasses() {
+            const status = document.getElementById('status-filter').value;
+            const district = document.getElementById('district-filter').value;
+            const search = document.getElementById('search-filter').value;
+            
+            fetch(`/admin/passes/data?status=${status}&district=${district}&search=${search}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('passes-table-body');
+                    tbody.innerHTML = '';
+                    data.forEach(pass => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${pass.pass_number}</td>
+                                <td>${pass.name}</td>
+                                <td>${pass.email}</td>
+                                <td>${pass.district}</td>
+                                <td>${pass.valid_until}</td>
+                                <td>${pass.status}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="viewPass('${pass.pass_number}')">View</button>
+                                    <button class="btn btn-sm btn-success" onclick="renewPass('${pass.pass_number}')">Renew</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deletePass('${pass.pass_number}')">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // Function to load districts
+        function loadDistricts() {
+            fetch('/admin/districts')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('district-filter');
+                    select.innerHTML = '<option value="">All Districts</option>';
+                    data.forEach(district => {
+                        select.innerHTML += `<option value="${district}">${district}</option>`;
+                    });
+                });
+        }
+
+        // Function to export passes
+        function exportPasses() {
+            const status = document.getElementById('status-filter').value;
+            const district = document.getElementById('district-filter').value;
+            window.location.href = `/admin/passes/export?status=${status}&district=${district}`;
+        }
+
+        // Function to print passes
+        function printPasses() {
+            window.print();
+        }
+
+        // Event listeners
+        document.getElementById('filterForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            loadPasses();
+        });
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPasses();
+            loadDistricts();
+        });
+    </script>
+</body>
+</html> 
