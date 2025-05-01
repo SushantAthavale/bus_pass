@@ -62,16 +62,23 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="chart-container">
                                     <canvas id="passStatusChart"></canvas>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <canvas id="districtDistributionChart"></canvas>
-                                </div>
-                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- District Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">District-wise Pass Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="districtBarChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -136,7 +143,13 @@
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Pass Status Distribution'
+                            }
+                        }
                     }
                 });
             });
@@ -150,30 +163,73 @@
                     districtData[district] = 0;
                 });
 
-                fetch('/admin/passes')
+                fetch('/admin/passes/data')
                     .then(response => response.json())
                     .then(passes => {
                         passes.forEach(pass_data => {
-                            districtData[pass_data.district]++;
+                            if (pass_data.district in districtData) {
+                                districtData[pass_data.district]++;
+                            }
                         });
 
-                        const ctx = document.getElementById('districtDistributionChart').getContext('2d');
-                        new Chart(ctx, {
+                        // Create bar chart for district distribution
+                        const barCtx = document.getElementById('districtBarChart').getContext('2d');
+                        const sortedDistricts = Object.entries(districtData)
+                            .sort(([,a], [,b]) => b - a)
+                            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+                        new Chart(barCtx, {
                             type: 'bar',
                             data: {
-                                labels: Object.keys(districtData),
+                                labels: Object.keys(sortedDistricts),
                                 datasets: [{
                                     label: 'Number of Passes',
-                                    data: Object.values(districtData),
-                                    backgroundColor: '#0d6efd'
+                                    data: Object.values(sortedDistricts),
+                                    backgroundColor: '#0d6efd',
+                                    borderColor: '#0a58ca',
+                                    borderWidth: 1
                                 }]
                             },
                             options: {
                                 responsive: true,
-                                maintainAspectRatio: false
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'District-wise Pass Distribution'
+                                    },
+                                    legend: {
+                                        display: false
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Number of Passes'
+                                        }
+                                    },
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Districts'
+                                        }
+                                    }
+                                }
                             }
                         });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching passes:', error);
+                        document.getElementById('districtBarChart').parentElement.innerHTML = 
+                            '<div class="alert alert-danger">Error loading district data</div>';
                     });
+            })
+            .catch(error => {
+                console.error('Error fetching districts:', error);
+                document.getElementById('districtBarChart').parentElement.innerHTML = 
+                    '<div class="alert alert-danger">Error loading district data</div>';
             });
 
         // Load user activity data
