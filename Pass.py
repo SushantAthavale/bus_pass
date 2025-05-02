@@ -1301,14 +1301,11 @@ def save_email_settings():
         # Update or insert email settings
         cursor.execute('''
             INSERT OR REPLACE INTO settings (
-                smtpServer, smtpPort, smtpUsername, smtpPassword, fromEmail
-            ) VALUES (?, ?, ?, ?, ?)
+                fromEmail, smtpPassword
+            ) VALUES (?, ?)
         ''', (
-            data.get('smtpServer', ''),
-            data.get('smtpPort', 587),
-            data.get('smtpUsername', ''),
-            data.get('smtpPassword', ''),
-            data.get('fromEmail', '')
+            data.get('fromEmail', ''),
+            data.get('smtpPassword', '')
         ))
         
         conn.commit()
@@ -1537,6 +1534,167 @@ def admin_recent_activity():
     
     return jsonify([dict(activity) for activity in activities])
 
+@app.route('/help_support')
+def help_support():
+    try:
+        return render_template('help_support.html')
+    except Exception as e:
+        print(f"Error rendering help_support.html: {str(e)}")
+        return f"Error: {str(e)}", 500
+
+@app.route('/admin/passes/delete/<pass_number>', methods=['DELETE'])
+@login_required
+def delete_pass(pass_number):
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Delete the pass
+        cursor.execute('DELETE FROM bus_passes WHERE pass_number = ?', (pass_number,))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Pass deleted successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/users/edit/<int:user_id>', methods=['PUT'])
+@login_required
+def edit_user(user_id):
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    current_user = cursor.fetchone()
+    
+    if not current_user or not current_user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        data = request.get_json()
+        
+        # Update user
+        cursor.execute('''
+            UPDATE users 
+            SET username = ?, email = ?, is_admin = ?
+            WHERE id = ?
+        ''', (
+            data.get('username'),
+            data.get('email'),
+            data.get('is_admin'),
+            user_id
+        ))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'User updated successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/users/delete/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    current_user = cursor.fetchone()
+    
+    if not current_user or not current_user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Delete user
+        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'User deleted successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/admin/dashboard/export')
+@login_required
+def export_dashboard():
+    # Check if user is admin
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_admin FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user['is_admin']:
+        conn.close()
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Get all data for export
+        cursor.execute('''
+            SELECT 
+                bp.pass_number,
+                bp.name,
+                bp.email,
+                bp.district,
+                bp.valid_until,
+                CASE 
+                    WHEN bp.valid_until >= date('now') THEN 'Active'
+                    ELSE 'Expired'
+                END as status,
+                bp.created_at,
+                u.username as created_by
+            FROM bus_passes bp
+            LEFT JOIN users u ON bp.user_id = u.id
+            ORDER BY bp.created_at DESC
+        ''')
+        passes = cursor.fetchall()
+        
+        # Create CSV content
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Pass Number', 'Name', 'Email', 'District', 'Valid Until', 'Status', 'Created At', 'Created By'])
+        
+        # Write data
+        for pass_data in passes:
+            writer.writerow([
+                pass_data['pass_number'],
+                pass_data['name'],
+                pass_data['email'],
+                pass_data['district'],
+                pass_data['valid_until'],
+                pass_data['status'],
+                pass_data['created_at'],
+                pass_data['created_by']
+            ])
+        
+        output.seek(0)
+        
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment; filename=dashboard_export.csv'}
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    app.debug = True  # Enable debug mode
+    app.run(host='0.0.0.0', port=5000)

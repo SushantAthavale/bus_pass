@@ -3,40 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Passes - Admin Dashboard</title>
+    <title>Admin - Passes</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .sidebar {
             min-height: 100vh;
             background-color: #343a40;
-            color: white;
+            padding-top: 20px;
         }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,.75);
+        .sidebar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
         }
-        .sidebar .nav-link:hover {
-            color: white;
+        .sidebar a:hover {
+            background-color: #495057;
         }
-        .sidebar .nav-link.active {
-            color: white;
-            background-color: rgba(255,255,255,.1);
+        .sidebar a.active {
+            background-color: #0d6efd;
         }
         .main-content {
             padding: 20px;
         }
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
-        .status-active {
-            background-color: #28a745;
-            color: white;
+        .table-responsive {
+            margin-top: 20px;
         }
-        .status-expired {
-            background-color: #dc3545;
-            color: white;
+        .action-buttons {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
@@ -44,91 +44,44 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h4>Admin Dashboard</h4>
-                    </div>
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                                <i class="bi bi-speedometer2 me-2"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_users') }}">
-                                <i class="bi bi-people me-2"></i>
-                                Users
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="{{ url_for('admin_passes') }}">
-                                <i class="bi bi-card-text me-2"></i>
-                                Passes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_reports') }}">
-                                <i class="bi bi-graph-up me-2"></i>
-                                Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_settings') }}">
-                                <i class="bi bi-gear me-2"></i>
-                                Settings
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h4 class="text-white text-center mb-4">Admin Panel</h4>
+                <a href="/admin"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a href="/admin/users"><i class="bi bi-people me-2"></i>Users</a>
+                <a href="/admin/passes" class="active"><i class="bi bi-ticket-perforated me-2"></i>Passes</a>
+                <a href="/admin/reports"><i class="bi bi-graph-up me-2"></i>Reports</a>
+                <a href="/admin/settings"><i class="bi bi-gear me-2"></i>Settings</a>
             </div>
 
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Manage Bus Passes</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportPasses()">
-                                <i class="bi bi-download me-1"></i>Export
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printPasses()">
-                                <i class="bi bi-printer me-1"></i>Print
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <h2 class="mb-4">Pass Management</h2>
 
                 <!-- Filters -->
-                <div class="card mb-4">
+                <div class="card">
                     <div class="card-body">
-                        <form id="filterForm" class="row g-3">
+                        <div class="row">
                             <div class="col-md-3">
-                                <label for="status-filter" class="form-label">Status</label>
-                                <select class="form-select" id="status-filter">
-                                    <option value="">All</option>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
                                     <option value="active">Active</option>
                                     <option value="expired">Expired</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label for="district-filter" class="form-label">District</label>
-                                <select class="form-select" id="district-filter">
-                                    <option value="">All</option>
-                                    <!-- Will be populated by JavaScript -->
+                                <select class="form-select" id="districtFilter">
+                                    <option value="">All Districts</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label for="search-filter" class="form-label">Search</label>
-                                <input type="text" class="form-control" id="search-filter" placeholder="Search...">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search...">
                             </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-search me-1"></i>Filter
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" onclick="exportPasses()">
+                                    <i class="bi bi-download me-2"></i>Export
                                 </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
@@ -148,85 +101,122 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="passes-table-body">
-                                    <!-- Will be populated by JavaScript -->
+                                <tbody id="passesTableBody">
+                                    <!-- Passes will be loaded here -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Function to load passes
+        // Load passes data
         function loadPasses() {
-            const status = document.getElementById('status-filter').value;
-            const district = document.getElementById('district-filter').value;
-            const search = document.getElementById('search-filter').value;
-            
+            const status = document.getElementById('statusFilter').value;
+            const district = document.getElementById('districtFilter').value;
+            const search = document.getElementById('searchInput').value;
+
             fetch(`/admin/passes/data?status=${status}&district=${district}&search=${search}`)
                 .then(response => response.json())
-                .then(data => {
-                    const tbody = document.getElementById('passes-table-body');
+                .then(passes => {
+                    const tbody = document.getElementById('passesTableBody');
                     tbody.innerHTML = '';
-                    data.forEach(pass => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${pass.pass_number}</td>
-                                <td>${pass.name}</td>
-                                <td>${pass.email}</td>
-                                <td>${pass.district}</td>
-                                <td>${pass.valid_until}</td>
-                                <td>${pass.status}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary" onclick="viewPass('${pass.pass_number}')">View</button>
-                                    <button class="btn btn-sm btn-success" onclick="renewPass('${pass.pass_number}')">Renew</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deletePass('${pass.pass_number}')">Delete</button>
-                                </td>
-                            </tr>
+
+                    passes.forEach(pass => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${pass.pass_number}</td>
+                            <td>${pass.name}</td>
+                            <td>${pass.email}</td>
+                            <td>${pass.district}</td>
+                            <td>${pass.valid_until}</td>
+                            <td>
+                                <span class="badge ${pass.status === 'Active' ? 'bg-success' : 'bg-danger'}">
+                                    ${pass.status}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-info" onclick="viewPass('${pass.pass_number}')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="renewPass('${pass.pass_number}')">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deletePass('${pass.pass_number}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
                         `;
+                        tbody.appendChild(row);
                     });
                 });
         }
 
-        // Function to load districts
+        // Load districts
         function loadDistricts() {
             fetch('/admin/districts')
                 .then(response => response.json())
-                .then(data => {
-                    const select = document.getElementById('district-filter');
-                    select.innerHTML = '<option value="">All Districts</option>';
-                    data.forEach(district => {
-                        select.innerHTML += `<option value="${district}">${district}</option>`;
+                .then(districts => {
+                    const select = document.getElementById('districtFilter');
+                    districts.forEach(district => {
+                        const option = document.createElement('option');
+                        option.value = district;
+                        option.textContent = district;
+                        select.appendChild(option);
                     });
                 });
         }
 
-        // Function to export passes
+        // View pass
+        function viewPass(passNumber) {
+            window.location.href = `/view_pass?pass_number=${passNumber}`;
+        }
+
+        // Renew pass
+        function renewPass(passNumber) {
+            window.location.href = `/renew/${passNumber}`;
+        }
+
+        // Delete pass
+        function deletePass(passNumber) {
+            if (confirm(`Are you sure you want to delete pass ${passNumber}?`)) {
+                fetch(`/admin/passes/delete/${passNumber}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pass deleted successfully');
+                        loadPasses();
+                    } else {
+                        alert('Error deleting pass: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        // Export passes
         function exportPasses() {
-            const status = document.getElementById('status-filter').value;
-            const district = document.getElementById('district-filter').value;
+            const status = document.getElementById('statusFilter').value;
+            const district = document.getElementById('districtFilter').value;
             window.location.href = `/admin/passes/export?status=${status}&district=${district}`;
         }
 
-        // Function to print passes
-        function printPasses() {
-            window.print();
-        }
-
         // Event listeners
-        document.getElementById('filterForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            loadPasses();
-        });
+        document.getElementById('statusFilter').addEventListener('change', loadPasses);
+        document.getElementById('districtFilter').addEventListener('change', loadPasses);
+        document.getElementById('searchInput').addEventListener('input', loadPasses);
 
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            loadPasses();
             loadDistricts();
+            loadPasses();
         });
     </script>
 </body>
