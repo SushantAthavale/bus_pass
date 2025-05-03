@@ -207,6 +207,19 @@
                     tbody.innerHTML = '';
                     passes.forEach(pass => {
                         const row = document.createElement('tr');
+                        const timestamp = new Date(pass.created_at);
+                        const timeString = timestamp.toLocaleTimeString('en-IN', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        }).toLowerCase();
+                        const dateString = timestamp.toLocaleDateString('en-IN', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                        const formattedDate = `${timeString}<br>${dateString}`;
                         row.innerHTML = `
                             <td>${pass.pass_number}</td>
                             <td>${pass.name}</td>
@@ -215,7 +228,7 @@
                                     ${pass.status}
                                 </span>
                             </td>
-                            <td>${pass.created_at}</td>
+                            <td>${formattedDate}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -231,14 +244,34 @@
                     tbody.innerHTML = '';
                     activities.forEach(activity => {
                         const row = document.createElement('tr');
+                        const timestamp = new Date(activity.timestamp);
+                        const timeString = timestamp.toLocaleTimeString('en-IN', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        }).toLowerCase();
+                        const dateString = timestamp.toLocaleDateString('en-IN', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                        const formattedTime = `${timeString}<br>${dateString}`;
                         row.innerHTML = `
                             <td>${activity.username}</td>
                             <td>${activity.action}</td>
-                            <td>${activity.timestamp}</td>
+                            <td>${formattedTime}</td>
                         `;
                         tbody.appendChild(row);
                     });
                 });
+        }
+
+        // Auto-refresh recent activity every 30 seconds
+        function startAutoRefresh() {
+            setInterval(() => {
+                loadRecentActivity();
+            }, 30000); // Refresh every 30 seconds
         }
 
         // Export dashboard data
@@ -262,6 +295,7 @@
             loadStats();
             loadRecentPasses();
             loadRecentActivity();
+            startAutoRefresh();
         });
     </script>
 </body>
