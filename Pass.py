@@ -179,49 +179,6 @@ def save_base64_image(base64_data, pass_number):
         print(f"Error saving image: {e}")
         return None
 
-# def generate_otp():
-#     """Generates a 6-digit OTP."""
-#     return str(random.randint(100000, 999999))
-
-# def verify_otp(email, mobile, otp):
-#     """Verify the OTP entered by the user."""
-#     conn = None
-#     try:
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-        
-#         # Get the most recent OTP for the user (within last 5 minutes)
-#         cursor.execute('''
-#             SELECT otp FROM otp_verification 
-#             WHERE email = ? AND mobile = ? 
-#             AND created_at >= datetime('now', '-5 minutes')
-#             ORDER BY created_at DESC LIMIT 1
-#         ''', (email, mobile))
-        
-#         result = cursor.fetchone()
-        
-#         if result and str(result[0]) == str(otp):
-#             # Delete the used OTP
-#             cursor.execute('''
-#                 DELETE FROM otp_verification 
-#                 WHERE email = ? AND mobile = ? AND otp = ?
-#             ''', (email, mobile, otp))
-            
-#             conn.commit()
-#             return True
-            
-#         return False
-        
-#     except Exception as e:
-#         print(f"Error verifying OTP: {str(e)}")
-#         if conn:
-#             conn.rollback()
-#         return False
-        
-#     finally:
-#         if conn:
-#             conn.close()
-
 @app.route('/')
 def index():
     return render_template('index.html')
